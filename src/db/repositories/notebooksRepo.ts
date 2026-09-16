@@ -21,7 +21,7 @@ export const notebooksRepo = {
     );
   },
 
-  async create(input: { name: string; space_id?: string | null }): Promise<Notebook> {
+  async create(input: { name: string; space_id?: string | null; sort_order?: number }): Promise<Notebook> {
     const db = await getDb();
     const notebook: Notebook = {
       id: newId(),
@@ -29,7 +29,7 @@ export const notebooksRepo = {
       name: input.name,
       color: null,
       icon: null,
-      sort_order: 0,
+      sort_order: input.sort_order ?? 0,
       created_at: now(),
       updated_at: now(),
       deleted_at: null,
@@ -49,5 +49,27 @@ export const notebooksRepo = {
       ],
     );
     return notebook;
+  },
+
+  async update(id: string, input: { name: string }): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE notebooks SET name = $1, updated_at = $2 WHERE id = $3", [
+      input.name,
+      now(),
+      id,
+    ]);
+  },
+
+  async reorder(orderedIds: string[]): Promise<void> {
+    const db = await getDb();
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        db.execute("UPDATE notebooks SET sort_order = $1, updated_at = $2 WHERE id = $3", [
+          index,
+          now(),
+          id,
+        ]),
+      ),
+    );
   },
 };

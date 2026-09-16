@@ -1,20 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notebooksRepo } from "../../db/repositories/notebooksRepo";
 import { notesRepo } from "../../db/repositories/notesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
-import { QuickCreateDialog } from "../../shared/ui/QuickCreateDialog";
 import { Explorer } from "./components/Explorer";
 import { NoteEditor } from "./components/NoteEditor";
 import { Backlinks } from "./components/Backlinks";
+import { parseWikilinks, renameWikilinks, resolveNoteByTitle } from "./utils/links";
 
-type DialogState = { kind: "notebook" } | { kind: "note"; notebookId: string } | null;
+function nextNotebookName(existingNames: string[]): string {
+  const base = "Nova pasta";
+  if (!existingNames.includes(base)) return base;
+  let n = 2;
+  while (existingNames.includes(`${base} ${n}`)) n++;
+  return `${base} ${n}`;
+}
 
 export default function Notebooks() {
   const notebooksState = useRepoList(notebooksRepo.list);
   const notesState = useRepoList(notesRepo.list);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<DialogState>(null);
+  const [renamingNotebookId, setRenamingNotebookId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (notesState.state.status !== "ready") return;
+    const items = notesState.state.items;
+    if (items.length === 0 || items.some((n) => n.id === selectedNoteId)) return;
+    const mostRecent = [...items].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
+    setSelectedNoteId(mostRecent.id);
+  }, [notesState.state, selectedNoteId]);
 
   if (notebooksState.state.status === "loading" || notesState.state.status === "loading") {
     return <div className="h-full" />;
@@ -32,9 +46,106 @@ export default function Notebooks() {
     notesState.reload();
   }
 
-  function openCreateNote() {
-    setDialog({ kind: "note", notebookId: notebooks[0]?.id ?? "" });
+  async function handleCreateNotebook() {
+    const notebook = await notebooksRepo.create({
+      name: nextNotebookName(notebooks.map((n) => n.name)),
+      sort_order: notebooks.length,
+    });
+    reload();
+    setRenamingNotebookId(notebook.id);
   }
+
+  function handleRenameNotebook(id: string, name: string) {
+    setRenamingNotebookId(null);
+    const trimmed = name.trim();
+    const current = notebooks.find((n) => n.id === id);
+    if (!trimmed || trimmed === current?.name) return;
+    notebooksRepo.update(id, { name: trimmed }).then(reload);
+  }
+
+  function handleReorderNotebooks(orderedIds: string[]) {
+    notebooksRepo.reorder(orderedIds).then(reload);
+  }
+
+  async function handleCreateNote(notebookId: string) {
+    let targetNotebookId = notebookId;
+    if (notebooks.length === 0) {
+      const notebook = await notebooksRepo.create({ name: "Minhas notas" });
+      targetNotebookId = notebook.id;
+    }
+    const note = await notesRepo.create({
+      notebook_id: targetNotebookId,
+      title: "Nova Nota",
+      sort_order: notes.filter((n) => n.notebook_id === targetNotebookId).length,
+    });
+    reload();
+    setSelectedNoteId(note.id);
+  }
+
+  async function handleDuplicateNote() {
+    if (!selectedNote) return;
+    const copy = await notesRepo.create({
+      notebook_id: selectedNote.notebook_id,
+      title: `${selectedNote.title} (cópia)`,
+      content: selectedNote.content,
+      sort_order: notes.filter((n) => n.notebook_id === selectedNote.notebook_id).length,
+    });
+    reload();
+    setSelectedNoteId(copy.id);
+  }
+
+  function handleMoveSelectedNote(notebookId: string) {
+    if (!selectedNote) return;
+    const targetIds = notes.filter((n) => n.notebook_id === notebookId).map((n) => n.id);
+    notesRepo.reorderWithin(notebookId, [...targetIds, selectedNote.id]).then(reload);
+  }
+
+  function handleReorderNotes(_noteId: string, toNotebookId: string, orderedIdsInTarget: string[]) {
+    notesRepo.reorderWithin(toNotebookId, orderedIdsInTarget).then(reload);
+  }
+
+  function handleDeleteNote() {
+    if (!selectedNote) return;
+    notesRepo.remove(selectedNote.id).then(reload);
+    setSelectedNoteId(null);
+  }
+
+  async function handleSaveTitle(newTitle: string) {
+    if (!selectedNote) return;
+    const oldTitle = selectedNote.title;
+    await notesRepo.update(selectedNote.id, { title: newTitle });
+    if (oldTitle.trim() && oldTitle.trim().toLowerCase() !== newTitle.trim().toLowerCase()) {
+      const affected = notes.filter(
+        (n) => n.id !== selectedNote.id && parseWikilinks(n.content).some((link) => link.title.toLowerCase() === oldTitle.trim().toLowerCase()),
+      );
+      await Promise.all(
+        affected.map((n) => notesRepo.update(n.id, { content: renameWikilinks(n.content, oldTitle, newTitle) })),
+      );
+    }
+    reload();
+  }
+
+  function handleFollowLink(title: string) {
+    const existing = resolveNoteByTitle(notes, title);
+    if (existing) {
+      setSelectedNoteId(existing.id);
+      return;
+    }
+    const notebookId = selectedNote?.notebook_id ?? notebooks[0]?.id;
+    if (!notebookId) return;
+    const sortOrder = notes.filter((n) => n.notebook_id === notebookId).length;
+    notesRepo.create({ notebook_id: notebookId, title, sort_order: sortOrder }).then((note) => {
+      reload();
+      setSelectedNoteId(note.id);
+    });
+  }
+
+  const selectedNotebook = selectedNote
+    ? (notebooks.find((n) => n.id === selectedNote.notebook_id) ?? null)
+    : null;
+  const otherNotebooks = selectedNote
+    ? notebooks.filter((n) => n.id !== selectedNote.notebook_id)
+    : [];
 
   return (
     <div className="flex h-full">
@@ -42,50 +153,30 @@ export default function Notebooks() {
         notebooks={notebooks}
         notes={notes}
         selectedNoteId={selectedNoteId}
+        renamingNotebookId={renamingNotebookId}
         onSelectNote={setSelectedNoteId}
-        onCreateNotebook={() => setDialog({ kind: "notebook" })}
-        onCreateNote={(notebookId) => setDialog({ kind: "note", notebookId })}
+        onCreateNotebook={handleCreateNotebook}
+        onCreateNote={handleCreateNote}
+        onRenameNotebook={handleRenameNotebook}
+        onReorderNotebooks={handleReorderNotebooks}
+        onMoveNote={handleReorderNotes}
       />
       <NoteEditor
         note={selectedNote}
-        onCreateNote={openCreateNote}
-        onSaveTitle={(title) => selectedNote && notesRepo.update(selectedNote.id, { title }).then(notesState.reload)}
+        notebook={selectedNotebook}
+        notes={notes}
+        otherNotebooks={otherNotebooks}
+        onCreateNote={() => handleCreateNote(notebooks[0]?.id ?? "")}
+        onSaveTitle={handleSaveTitle}
         onSaveContent={(content) =>
           selectedNote && notesRepo.update(selectedNote.id, { content }).then(notesState.reload)
         }
+        onDuplicateNote={handleDuplicateNote}
+        onMoveNote={handleMoveSelectedNote}
+        onDeleteNote={handleDeleteNote}
+        onFollowLink={handleFollowLink}
       />
-      <Backlinks hasNote={!!selectedNote} />
-
-      <QuickCreateDialog
-        open={dialog?.kind === "notebook"}
-        onOpenChange={(open) => setDialog(open ? { kind: "notebook" } : null)}
-        title="Novo caderno"
-        placeholder="Nome do caderno"
-        submitLabel="Criar caderno"
-        onSubmit={async (name) => {
-          await notebooksRepo.create({ name });
-          reload();
-        }}
-      />
-
-      <QuickCreateDialog
-        open={dialog?.kind === "note"}
-        onOpenChange={(open) => !open && setDialog(null)}
-        title="Nova nota"
-        placeholder="Título da nota"
-        submitLabel="Criar nota"
-        onSubmit={async (title) => {
-          if (dialog?.kind !== "note") return;
-          let notebookId = dialog.notebookId;
-          if (notebooks.length === 0) {
-            const notebook = await notebooksRepo.create({ name: "Minhas notas" });
-            notebookId = notebook.id;
-          }
-          const note = await notesRepo.create({ notebook_id: notebookId, title });
-          reload();
-          setSelectedNoteId(note.id);
-        }}
-      />
+      <Backlinks note={selectedNote} notes={notes} onSelectNote={setSelectedNoteId} />
     </div>
   );
 }
