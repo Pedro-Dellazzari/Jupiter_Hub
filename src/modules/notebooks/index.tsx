@@ -67,6 +67,16 @@ export default function Notebooks() {
     notebooksRepo.reorder(orderedIds).then(reload);
   }
 
+  async function handleDeleteNotebook(id: string) {
+    const notesToDelete = notes.filter((n) => n.notebook_id === id);
+    await Promise.all(notesToDelete.map((n) => notesRepo.remove(n.id)));
+    await notebooksRepo.remove(id);
+    if (selectedNote && notesToDelete.some((n) => n.id === selectedNote.id)) {
+      setSelectedNoteId(null);
+    }
+    reload();
+  }
+
   async function handleCreateNote(notebookId: string) {
     let targetNotebookId = notebookId;
     if (notebooks.length === 0) {
@@ -160,6 +170,7 @@ export default function Notebooks() {
         onRenameNotebook={handleRenameNotebook}
         onReorderNotebooks={handleReorderNotebooks}
         onMoveNote={handleReorderNotes}
+        onDeleteNotebook={handleDeleteNotebook}
       />
       <NoteEditor
         note={selectedNote}

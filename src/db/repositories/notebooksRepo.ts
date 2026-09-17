@@ -60,6 +60,11 @@ export const notebooksRepo = {
     ]);
   },
 
+  async remove(id: string): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE notebooks SET deleted_at = $1 WHERE id = $2", [now(), id]);
+  },
+
   async reorder(orderedIds: string[]): Promise<void> {
     const db = await getDb();
     await Promise.all(

@@ -1,8 +1,9 @@
 import { Fragment, useState } from "react";
-import { ChevronDown, ChevronRight, FileText, NotebookText, Plus } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { ChevronDown, ChevronRight, FileText, NotebookText, Plus, Trash2 } from "lucide-react";
 import { cn } from "../../../shared/utils/cn";
 import { springs } from "../../../shared/motion/springs";
+import { ConfirmDialog } from "../../../shared/ui/ConfirmDialog";
 import type { Notebook } from "../../../db/repositories/notebooksRepo";
 import type { Note } from "../../../db/repositories/notesRepo";
 import { reorderList } from "../utils/dragOrder";
@@ -18,6 +19,7 @@ type ExplorerProps = {
   onRenameNotebook: (id: string, name: string) => void;
   onReorderNotebooks: (orderedIds: string[]) => void;
   onMoveNote: (noteId: string, toNotebookId: string, orderedIdsInTarget: string[]) => void;
+  onDeleteNotebook: (id: string) => void;
 };
 
 type Dragging = { kind: "notebook"; id: string } | { kind: "note"; id: string } | null;
@@ -43,6 +45,7 @@ export function Explorer({
   onRenameNotebook,
   onReorderNotebooks,
   onMoveNote,
+  onDeleteNotebook,
 }: ExplorerProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [dragging, setDragging] = useState<Dragging>(null);
@@ -50,6 +53,9 @@ export function Explorer({
   const [hoveredNoteId, setHoveredNoteId] = useState<string | null>(null);
   const [hoveredNewNoteFor, setHoveredNewNoteFor] = useState<string | null>(null);
   const [hoveredNewNotebook, setHoveredNewNotebook] = useState(false);
+  const [hoveredHeaderId, setHoveredHeaderId] = useState<string | null>(null);
+  const [hoveredDeleteFor, setHoveredDeleteFor] = useState<string | null>(null);
+  const [deletingNotebookId, setDeletingNotebookId] = useState<string | null>(null);
 
   function endDrag() {
     setDragging(null);
@@ -186,6 +192,10 @@ export function Explorer({
                   onDragEnd={endDrag}
                   onDragOver={(e) => handleNotebookHeaderDragOver(e, notebook, notebookIndex)}
                   onDrop={(e) => handleNotebookHeaderDrop(e, notebook)}
+                  onMouseEnter={() => setHoveredHeaderId(notebook.id)}
+                  onMouseLeave={() =>
+                    setHoveredHeaderId((current) => (current === notebook.id ? null : current))
+                  }
                   className={cn(
                     "flex items-center gap-1.5 rounded-md py-2 text-left text-(--color-ink-muted)",
                     isDraggingThis && "cursor-grabbing opacity-40",
@@ -226,6 +236,7 @@ export function Explorer({
                     </button>
                   )}
                   <motion.button
+                    layout
                     onClick={(e) => {
                       e.stopPropagation();
                       onCreateNote(notebook.id);
@@ -234,9 +245,9 @@ export function Explorer({
                     onMouseLeave={() =>
                       setHoveredNewNoteFor((current) => (current === notebook.id ? null : current))
                     }
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.85 }}
-                    transition={springs.snappy}
+                    whileHover={{ scale: 1.15, transition: springs.snappy }}
+                    whileTap={{ scale: 0.85, transition: springs.snappy }}
+                    transition={springs.gentle}
                     className={cn(
                       "flex size-4.5 shrink-0 items-center justify-center rounded-full text-(--color-ink-muted)",
                       hoveredNewNoteFor === notebook.id && "bg-(--color-fill) text-(--color-ink)",
@@ -245,6 +256,49 @@ export function Explorer({
                   >
                     <Plus className="size-3 shrink-0" strokeWidth={2} />
                   </motion.button>
+                  <AnimatePresence>
+                    {hoveredHeaderId === notebook.id && (
+                      <motion.button
+                        layout
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingNotebookId(notebook.id);
+                        }}
+                        onMouseEnter={() => setHoveredDeleteFor(notebook.id)}
+                        onMouseLeave={() =>
+                          setHoveredDeleteFor((current) => (current === notebook.id ? null : current))
+                        }
+                        initial={{ opacity: 0, x: 10, y: 6 }}
+                        animate={{
+                          opacity: 1,
+                          x: 0,
+                          y: 0,
+                          transition: {
+                            opacity: { duration: 0.12 },
+                            x: springs.gentle,
+                            y: { ...springs.gentle, delay: 0.05 },
+                          },
+                        }}
+                        exit={{
+                          opacity: 0,
+                          x: 10,
+                          y: 6,
+                          transition: { ...springs.gentle, opacity: { duration: 0.1 } },
+                        }}
+                        whileHover={{ scale: 1.15, transition: springs.snappy }}
+                        whileTap={{ scale: 0.85, transition: springs.snappy }}
+                        className={cn(
+                          "flex size-4.5 shrink-0 items-center justify-center rounded-full text-(--color-ink-muted)",
+                          hoveredDeleteFor === notebook.id
+                            ? "bg-(--color-danger)/12 text-(--color-danger)"
+                            : undefined,
+                        )}
+                        title="Excluir pasta"
+                      >
+                        <Trash2 className="size-3 shrink-0" strokeWidth={2} />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {isOpen && (
@@ -301,6 +355,25 @@ export function Explorer({
         })
       )}
       {dropIndicator?.kind === "notebook" && dropIndicator.index === notebooks.length && <DropLine />}
+      {(() => {
+        const notebook = notebooks.find((n) => n.id === deletingNotebookId);
+        if (!notebook) return null;
+        const noteCount = notes.filter((n) => n.notebook_id === notebook.id).length;
+        return (
+          <ConfirmDialog
+            open
+            onOpenChange={(open) => !open && setDeletingNotebookId(null)}
+            title={`Excluir "${notebook.name}"?`}
+            description={
+              noteCount > 0
+                ? `Isso também vai excluir ${noteCount} nota${noteCount === 1 ? "" : "s"} dentro dessa pasta.`
+                : "Essa pasta está vazia."
+            }
+            confirmLabel="Excluir"
+            onConfirm={() => onDeleteNotebook(notebook.id)}
+          />
+        );
+      })()}
     </div>
   );
 }
