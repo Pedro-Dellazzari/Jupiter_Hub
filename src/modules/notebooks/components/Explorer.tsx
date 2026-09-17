@@ -1,6 +1,8 @@
 import { Fragment, useState } from "react";
 import { ChevronDown, ChevronRight, FileText, NotebookText, Plus } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "../../../shared/utils/cn";
+import { springs } from "../../../shared/motion/springs";
 import type { Notebook } from "../../../db/repositories/notebooksRepo";
 import type { Note } from "../../../db/repositories/notesRepo";
 import { reorderList } from "../utils/dragOrder";
@@ -45,6 +47,9 @@ export function Explorer({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [dragging, setDragging] = useState<Dragging>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator>(null);
+  const [hoveredNoteId, setHoveredNoteId] = useState<string | null>(null);
+  const [hoveredNewNoteFor, setHoveredNewNoteFor] = useState<string | null>(null);
+  const [hoveredNewNotebook, setHoveredNewNotebook] = useState(false);
 
   function endDrag() {
     setDragging(null);
@@ -124,13 +129,21 @@ export function Explorer({
       <div className="mb-2 flex items-center gap-2">
         <span className="text-[15px] font-semibold text-(--color-ink)">Cadernos</span>
         <div className="flex-1" />
-        <button
+        <motion.button
           onClick={onCreateNotebook}
-          className="text-(--color-ink-muted) hover:text-(--color-ink)"
+          onMouseEnter={() => setHoveredNewNotebook(true)}
+          onMouseLeave={() => setHoveredNewNotebook(false)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.88 }}
+          transition={springs.snappy}
+          className={cn(
+            "flex size-5 shrink-0 items-center justify-center rounded-full text-(--color-ink-muted)",
+            hoveredNewNotebook && "bg-(--color-fill) text-(--color-ink)",
+          )}
           title="Novo caderno"
         >
           <Plus className="size-3.5" strokeWidth={2} />
-        </button>
+        </motion.button>
       </div>
 
       {notebooks.length === 0 ? (
@@ -142,12 +155,15 @@ export function Explorer({
           <p className="w-[180px] text-[12px] text-(--color-ink-muted)">
             Crie sua primeira nota ou pasta.
           </p>
-          <button
+          <motion.button
             onClick={onCreateNotebook}
-            className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-[12px] font-semibold text-white"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={springs.snappy}
+            className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-[12px] font-semibold text-white hover:brightness-110"
           >
             + Nova pasta
-          </button>
+          </motion.button>
         </div>
       ) : (
         notebooks.map((notebook, notebookIndex) => {
@@ -171,8 +187,8 @@ export function Explorer({
                   onDragOver={(e) => handleNotebookHeaderDragOver(e, notebook, notebookIndex)}
                   onDrop={(e) => handleNotebookHeaderDrop(e, notebook)}
                   className={cn(
-                    "flex cursor-grab items-center gap-1.5 rounded-md py-2 text-left text-(--color-ink-muted) active:cursor-grabbing",
-                    isDraggingThis && "opacity-40",
+                    "flex items-center gap-1.5 rounded-md py-2 text-left text-(--color-ink-muted)",
+                    isDraggingThis && "cursor-grabbing opacity-40",
                     isFolderTarget && "bg-(--color-accent)/10 ring-1 ring-(--color-accent)/40",
                   )}
                 >
@@ -209,15 +225,26 @@ export function Explorer({
                       {notebook.name}
                     </button>
                   )}
-                  <span
+                  <motion.button
                     onClick={(e) => {
                       e.stopPropagation();
                       onCreateNote(notebook.id);
                     }}
+                    onMouseEnter={() => setHoveredNewNoteFor(notebook.id)}
+                    onMouseLeave={() =>
+                      setHoveredNewNoteFor((current) => (current === notebook.id ? null : current))
+                    }
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.85 }}
+                    transition={springs.snappy}
+                    className={cn(
+                      "flex size-4.5 shrink-0 items-center justify-center rounded-full text-(--color-ink-muted)",
+                      hoveredNewNoteFor === notebook.id && "bg-(--color-fill) text-(--color-ink)",
+                    )}
                     title="Nova nota"
                   >
                     <Plus className="size-3 shrink-0" strokeWidth={2} />
-                  </span>
+                  </motion.button>
                 </div>
 
                 {isOpen && (
@@ -245,12 +272,16 @@ export function Explorer({
                             onDragOver={(e) => handleNoteRowDragOver(e, notebook, noteIndex)}
                             onDrop={(e) => handleNoteRowDrop(e, notebook)}
                             onClick={() => onSelectNote(note.id)}
+                            onMouseEnter={() => setHoveredNoteId(note.id)}
+                            onMouseLeave={() =>
+                              setHoveredNoteId((current) => (current === note.id ? null : current))
+                            }
                             className={cn(
-                              "flex cursor-grab items-center gap-2 rounded-md py-1.5 pr-2 pl-[18px] text-left text-[13px] active:cursor-grabbing",
-                              isDraggingThisNote && "opacity-40",
+                              "flex items-center gap-2 rounded-md py-1.5 pr-2 pl-[18px] text-left text-[13px]",
+                              isDraggingThisNote && "cursor-grabbing opacity-40",
                               isActive
                                 ? "bg-(--color-accent)/12 font-semibold text-(--color-accent)"
-                                : "text-(--color-ink) hover:bg-(--color-fill)",
+                                : cn("text-(--color-ink)", hoveredNoteId === note.id && "bg-(--color-fill)"),
                             )}
                           >
                             <FileText className="size-3 shrink-0 opacity-70" strokeWidth={2} />
