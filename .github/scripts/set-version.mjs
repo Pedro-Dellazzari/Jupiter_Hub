@@ -1,8 +1,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const version = process.argv[2];
-if (!version) {
-  console.error("Uso: node set-version.mjs <versao>");
+const SEMVER_RE = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/;
+
+if (!version || !SEMVER_RE.test(version)) {
+  console.error(`Versão inválida: "${version}". Esperado um semver tipo 1.2.3 ou 1.2.3-beta.1.`);
   process.exit(1);
 }
 
