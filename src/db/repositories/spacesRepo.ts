@@ -4,12 +4,19 @@ import { newId, now } from "../record";
 export type Space = {
   id: string;
   name: string;
+  description: string | null;
   color: string | null;
   icon: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+};
+
+export type SpaceWithStats = Space & {
+  task_count: number;
+  project_count: number;
+  note_count: number;
 };
 
 /**
@@ -25,11 +32,30 @@ export const spacesRepo = {
     );
   },
 
-  async create(input: { name: string; color?: string; icon?: string }): Promise<Space> {
+  /** Espaços com contagem de tarefas, projetos e notas — usado no card da tela de Espaços. */
+  async listWithStats(): Promise<SpaceWithStats[]> {
+    const db = await getDb();
+    return db.select<SpaceWithStats[]>(
+      `SELECT s.*,
+        (SELECT COUNT(*) FROM projects p WHERE p.space_id = s.id AND p.deleted_at IS NULL) AS project_count,
+        (SELECT COUNT(*) FROM tasks t
+          JOIN projects p ON p.id = t.project_id
+          WHERE p.space_id = s.id AND t.deleted_at IS NULL) AS task_count,
+        (SELECT COUNT(*) FROM notes n
+          JOIN notebooks nb ON nb.id = n.notebook_id
+          WHERE nb.space_id = s.id AND n.deleted_at IS NULL) AS note_count
+       FROM spaces s
+       WHERE s.deleted_at IS NULL
+       ORDER BY s.sort_order ASC`,
+    );
+  },
+
+  async create(input: { name: string; description?: string; color?: string; icon?: string }): Promise<Space> {
     const db = await getDb();
     const space: Space = {
       id: newId(),
       name: input.name,
+      description: input.description ?? null,
       color: input.color ?? null,
       icon: input.icon ?? null,
       sort_order: 0,
@@ -38,11 +64,12 @@ export const spacesRepo = {
       deleted_at: null,
     };
     await db.execute(
-      `INSERT INTO spaces (id, name, color, icon, sort_order, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO spaces (id, name, description, color, icon, sort_order, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         space.id,
         space.name,
+        space.description,
         space.color,
         space.icon,
         space.sort_order,

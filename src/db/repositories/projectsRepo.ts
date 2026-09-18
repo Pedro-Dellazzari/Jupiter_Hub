@@ -25,18 +25,24 @@ export const projectsRepo = {
     );
   },
 
-  async create(input: { name: string; space_id?: string | null }): Promise<Project> {
+  async create(input: {
+    name: string;
+    space_id?: string | null;
+    status?: string;
+    color?: string | null;
+    due_date?: string | null;
+  }): Promise<Project> {
     const db = await getDb();
     const project: Project = {
       id: newId(),
       space_id: input.space_id ?? null,
       name: input.name,
       description: null,
-      status: "planning",
-      color: null,
+      status: input.status ?? "planning",
+      color: input.color ?? null,
       icon: null,
       start_date: null,
-      due_date: null,
+      due_date: input.due_date ?? null,
       sort_order: 0,
       created_at: now(),
       updated_at: now(),

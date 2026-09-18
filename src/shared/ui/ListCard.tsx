@@ -10,17 +10,27 @@ export function ListCard({ children }: { children: ReactNode }) {
 export function ListRow({
   leading,
   title,
+  subtitle,
+  progress,
   trailing,
 }: {
   leading?: ReactNode;
-  title: string;
+  title: ReactNode;
+  /** Linha de contexto opcional abaixo do título (ex: contagem de tarefas, próxima tarefa). */
+  subtitle?: ReactNode;
+  /** Conteúdo full-width opcional entre o título e o subtítulo (ex: ProgressBar). */
+  progress?: ReactNode;
   trailing?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5">
-      {leading}
-      <span className="flex-1 truncate text-[14px] text-(--color-ink)">{title}</span>
-      {trailing}
+    <div className="flex flex-col gap-2 rounded-md px-3 py-2.5 hover:bg-(--color-fill)">
+      <div className="flex items-center gap-3">
+        {leading}
+        <span className="min-w-0 flex-1 truncate text-[14px] text-(--color-ink)">{title}</span>
+        {trailing}
+      </div>
+      {progress}
+      {subtitle}
     </div>
   );
 }
