@@ -35,6 +35,17 @@ jobs:
           node-version: lts/*
           cache: 'pnpm'
 
+      - name: extract version from tag
+        id: version
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: sync app version with tag
+        shell: bash
+        run: node .github/scripts/set-version.mjs "${{ steps.version.outputs.version }}"
+
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
