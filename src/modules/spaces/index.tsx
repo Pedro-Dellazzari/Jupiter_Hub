@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
 import { CheckSquare, FolderKanban, Hexagon, NotebookText, Plus } from "lucide-react";
 import { motion } from "motion/react";
-import { spacesRepo } from "../../db/repositories/spacesRepo";
+import { spacesRepo, type SpaceWithStats } from "../../db/repositories/spacesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
 import { Card } from "../../shared/ui/Card";
 import { Dialog } from "../../shared/ui/Dialog";
 import { EmptyState } from "../../shared/ui/EmptyState";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { springs } from "../../shared/motion/springs";
+import { SpaceDetailView } from "./components/SpaceDetailView";
 
 const SPACE_COLORS = ["#007AFF", "#8B5CF6", "#22C55E", "#F59E0B", "#FF2D55", "#00C7BE"];
 
@@ -86,6 +87,11 @@ function CreateSpaceDialog({
 export default function Spaces() {
   const { state, reload } = useRepoList(spacesRepo.listWithStats);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedSpace, setSelectedSpace] = useState<SpaceWithStats | null>(null);
+
+  if (selectedSpace) {
+    return <SpaceDetailView space={selectedSpace} onBack={() => setSelectedSpace(null)} />;
+  }
 
   return (
     <div className="h-full overflow-y-auto px-10 py-8">
@@ -116,7 +122,11 @@ export default function Spaces() {
       {state.status === "ready" && state.items.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {state.items.map((space, index) => (
-            <Card key={space.id} className="flex flex-col gap-3 p-5">
+            <Card
+              key={space.id}
+              onClick={() => setSelectedSpace(space)}
+              className="flex cursor-pointer flex-col gap-3 p-5 text-left transition-transform hover:scale-[1.01]"
+            >
               <div className="flex items-center gap-3">
                 <div
                   className="flex size-9 shrink-0 items-center justify-center rounded-[10px]"
