@@ -24,17 +24,23 @@ export const habitsRepo = {
     );
   },
 
-  async create(input: { name: string; space_id?: string | null }): Promise<Habit> {
+  async create(input: {
+    name: string;
+    space_id?: string | null;
+    frequency_type?: string;
+    color?: string | null;
+    target_count?: number;
+  }): Promise<Habit> {
     const db = await getDb();
     const habit: Habit = {
       id: newId(),
       space_id: input.space_id ?? null,
       name: input.name,
-      color: null,
+      color: input.color ?? null,
       icon: null,
-      frequency_type: "daily",
+      frequency_type: input.frequency_type ?? "daily",
       frequency_config: null,
-      target_count: 1,
+      target_count: input.target_count ?? 1,
       start_date: now().slice(0, 10),
       created_at: now(),
       updated_at: now(),

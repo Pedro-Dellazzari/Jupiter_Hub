@@ -2,9 +2,15 @@ import { ArrowRight, CheckSquare } from "lucide-react";
 import { Card } from "../../../shared/ui/Card";
 import { Badge } from "../../../shared/ui/Badge";
 import { ProgressBar } from "../../../shared/ui/ProgressBar";
-import { projects } from "../mockData";
+import { useRepoList } from "../../../shared/hooks/useRepoList";
+import { loadProjectsWithStats } from "../../../shared/queries/projectStats";
 
 export function ProjectsSection() {
+  const { state } = useRepoList(loadProjectsWithStats);
+  if (state.status !== "ready" || state.items.length === 0) return null;
+
+  const projects = state.items.slice(0, 4);
+
   return (
     <section className="flex flex-col gap-4">
       <div>
@@ -20,15 +26,15 @@ export function ProjectsSection() {
             <div className="flex items-center gap-2.5">
               <div
                 className="size-2.5 shrink-0 rounded-[3px]"
-                style={{ backgroundColor: project.color }}
+                style={{ backgroundColor: project.color ?? "#007aff" }}
               />
               <span className="text-[15px] font-semibold text-(--color-ink)">{project.name}</span>
               <div className="flex-1" />
-              <Badge>{project.spaceLabel}</Badge>
+              {project.spaceName && <Badge>{project.spaceName}</Badge>}
             </div>
 
             <div className="flex items-center gap-2.5">
-              <ProgressBar value={project.progress} color={project.color} className="flex-1" />
+              <ProgressBar value={project.progress} color={project.color ?? undefined} className="flex-1" />
               <span className="text-[12px] font-semibold text-(--color-ink-muted)">
                 {project.progress}%
               </span>
@@ -46,12 +52,15 @@ export function ProjectsSection() {
               )}
             </div>
 
-            <div className="h-px w-full bg-(--color-track)" />
-
-            <div className="flex items-center gap-2 text-[12px]">
-              <ArrowRight className="size-3 shrink-0 text-(--color-ink-muted)/70" strokeWidth={2} />
-              <span className="font-medium text-(--color-ink-muted)">{project.nextTask}</span>
-            </div>
+            {project.nextTask && (
+              <>
+                <div className="h-px w-full bg-(--color-track)" />
+                <div className="flex items-center gap-2 text-[12px]">
+                  <ArrowRight className="size-3 shrink-0 text-(--color-ink-muted)/70" strokeWidth={2} />
+                  <span className="font-medium text-(--color-ink-muted)">{project.nextTask}</span>
+                </div>
+              </>
+            )}
           </Card>
         ))}
       </div>

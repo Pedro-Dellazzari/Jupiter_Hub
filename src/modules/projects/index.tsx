@@ -11,8 +11,8 @@ import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { ProgressBar } from "../../shared/ui/ProgressBar";
 import { springs } from "../../shared/motion/springs";
+import { loadProjectsWithStats } from "../../shared/queries/projectStats";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
-import { loadProjectsWithStats } from "./utils/projectStats";
 import { projectStatusInfo } from "./utils/projectStatus";
 
 export default function Projects() {

@@ -1,15 +1,7 @@
 import type { TaskWithRelations } from "../../../db/repositories/tasksRepo";
+import { parseIsoDate, startOfDay } from "../../../shared/utils/date";
 
 const WEEKDAY_ABBR = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
-function parseIsoDate(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
 
 function endOfWeek(date: Date): Date {
   const end = startOfDay(date);

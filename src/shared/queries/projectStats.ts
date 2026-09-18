@@ -1,14 +1,7 @@
-import { projectsRepo, type Project } from "../../../db/repositories/projectsRepo";
-import { tasksRepo, type Task } from "../../../db/repositories/tasksRepo";
-
-function parseIsoDate(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
+import { projectsRepo, type Project } from "../../db/repositories/projectsRepo";
+import { spacesRepo } from "../../db/repositories/spacesRepo";
+import { tasksRepo, type Task } from "../../db/repositories/tasksRepo";
+import { parseIsoDate, startOfDay } from "../utils/date";
 
 export type ProjectStats = {
   /** % de tarefas concluídas em relação ao total (0 quando o projeto não tem tarefas). */
@@ -42,9 +35,16 @@ export function computeProjectStats(projectId: string, tasks: Task[], today: Dat
   };
 }
 
-/** Carrega projetos + tarefas e junta cada projeto com suas estatísticas derivadas. */
-export async function loadProjectsWithStats(): Promise<(Project & ProjectStats)[]> {
-  const [projects, tasks] = await Promise.all([projectsRepo.list(), tasksRepo.list()]);
+export type ProjectWithStats = Project & ProjectStats & { spaceName: string | null };
+
+/** Carrega projetos + tarefas + espaços e junta cada projeto com suas estatísticas derivadas — usado pela tela de Projetos e pelos cards da Home. */
+export async function loadProjectsWithStats(): Promise<ProjectWithStats[]> {
+  const [projects, tasks, spaces] = await Promise.all([projectsRepo.list(), tasksRepo.list(), spacesRepo.list()]);
   const today = new Date();
-  return projects.map((project) => ({ ...project, ...computeProjectStats(project.id, tasks, today) }));
+  const spaceNameById = new Map(spaces.map((space) => [space.id, space.name]));
+  return projects.map((project) => ({
+    ...project,
+    ...computeProjectStats(project.id, tasks, today),
+    spaceName: project.space_id ? (spaceNameById.get(project.space_id) ?? null) : null,
+  }));
 }
