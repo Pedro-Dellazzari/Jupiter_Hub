@@ -1,33 +1,56 @@
-import { Check, Circle, Square } from "lucide-react";
+import { Check, Circle, Flag, ListChecks, Square } from "lucide-react";
 import { motion } from "motion/react";
 import type { TaskWithRelations } from "../../../db/repositories/tasksRepo";
 import { formatDueLabel } from "../utils/dateGroups";
+import { priorityChipBackground, priorityStyle } from "../utils/priority";
 import { springs } from "../../../shared/motion/springs";
 import { cn } from "../../../shared/utils/cn";
 
 export function TaskRow({
   task,
   today,
+  selected,
+  onSelect,
   onToggleDone,
 }: {
   task: TaskWithRelations;
   today: Date;
+  selected: boolean;
+  onSelect: (id: string) => void;
   onToggleDone: (id: string, done: boolean) => void;
 }) {
   const isDone = task.status === "done";
   const due = formatDueLabel(task.due_date, today);
+  const priority = priorityStyle(task.priority);
+  const showPriority = task.priority !== "none" && !isDone;
 
   return (
-    <div className="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-(--color-fill)">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(task.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(task.id);
+        }
+      }}
+      className={cn(
+        "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent)/50",
+        selected ? "bg-(--color-accent)/8" : "hover:bg-(--color-fill)",
+      )}
+    >
       <motion.button
-        onClick={() => onToggleDone(task.id, !isDone)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleDone(task.id, !isDone);
+        }}
         whileHover={{ scale: 1.1, transition: springs.snappy }}
         whileTap={{ scale: 0.85, transition: springs.snappy }}
+        style={!isDone ? { borderColor: priority.color } : undefined}
         className={cn(
           "flex size-4 shrink-0 items-center justify-center rounded-full border",
-          isDone
-            ? "border-(--color-accent) bg-(--color-accent) text-white"
-            : "border-(--color-divider) text-transparent",
+          isDone ? "border-(--color-accent) bg-(--color-accent) text-white" : "text-transparent",
         )}
         title={isDone ? "Marcar como a fazer" : "Marcar como concluída"}
       >
@@ -44,6 +67,24 @@ export function TaskRow({
       </span>
 
       <div className="flex shrink-0 items-center gap-1.5">
+        {showPriority && (
+          <span
+            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+            style={{ backgroundColor: priorityChipBackground(task.priority), color: priority.ink }}
+          >
+            <Flag className="size-2 fill-current" strokeWidth={2.5} />
+            {priority.label}
+          </span>
+        )}
+        {task.subtask_total > 0 && (
+          <span
+            className="flex items-center gap-1 rounded-md bg-(--color-fill) px-1.5 py-0.5 text-[11px] font-medium text-(--color-ink-muted)"
+            title={`${task.subtask_done} de ${task.subtask_total} subtarefas concluídas`}
+          >
+            <ListChecks className="size-2.5" strokeWidth={2.5} />
+            {task.subtask_done}/{task.subtask_total}
+          </span>
+        )}
         {task.space_name && (
           <span className="flex items-center gap-1 rounded-md bg-(--color-fill) px-1.5 py-0.5 text-[11px] text-(--color-ink-muted)">
             <Circle className="size-2" strokeWidth={2.5} />

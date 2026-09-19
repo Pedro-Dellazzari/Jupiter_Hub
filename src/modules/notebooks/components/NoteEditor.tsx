@@ -3,8 +3,12 @@ import { DropdownMenu } from "radix-ui";
 import { Ban, ChevronRight, MoreHorizontal, NotebookText } from "lucide-react";
 import type { Note } from "../../../db/repositories/notesRepo";
 import type { Notebook } from "../../../db/repositories/notebooksRepo";
-import { findWikilinkTrigger, linkAtPosition, parseWikilinks } from "../utils/links";
+import { findWikilinkTrigger, linkAtPosition, resolveNoteByTitle } from "../utils/links";
+import { toggleTaskAtLine } from "../utils/markdown";
 import { getCaretCoordinates } from "../utils/textareaCaret";
+import { cn } from "../../../shared/utils/cn";
+import { MarkdownView } from "./MarkdownView";
+import { highlightMarkdownSource } from "./SourceHighlight";
 
 type NoteEditorProps = {
   note: Note | null;
@@ -28,6 +32,25 @@ type Suggestion = {
   activeIndex: number;
 };
 
+type Mode = "read" | "edit";
+
+/** Notas com conteúdo abrem em "Ler"; uma nota vazia já abre em "Editar" para começar a escrever. */
+function initialMode(note: Note | null): Mode {
+  return note && note.content.trim() === "" ? "edit" : "read";
+}
+
+function describeLastEdit(updatedAt: string): string {
+  const minutes = Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60_000);
+  if (minutes < 1) return "Editado agora";
+  if (minutes < 60) return `Editado há ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Editado há ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  const days = Math.floor(hours / 24);
+  return `Editado há ${days} ${days === 1 ? "dia" : "dias"}`;
+}
+
+const EDITOR_TEXT_CLASS = "font-mono text-[13px] leading-[1.7] break-words whitespace-pre-wrap";
+
 export function NoteEditor({
   note,
   notebook,
@@ -43,6 +66,7 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
+  const [mode, setMode] = useState<Mode>(initialMode(note));
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -50,8 +74,14 @@ export function NoteEditor({
   useEffect(() => {
     setTitle(note?.title ?? "");
     setContent(note?.content ?? "");
+    setMode(initialMode(note));
     setSuggestion(null);
+    // Só reinicia ao trocar de nota: reagir a note.content sobrescreveria o que está sendo digitado.
   }, [note?.id]);
+
+  useEffect(() => {
+    if (mode === "edit") textareaRef.current?.focus();
+  }, [mode]);
 
   const matches = suggestion
     ? notes
@@ -88,19 +118,27 @@ export function NoteEditor({
   }
 
   function handleContentKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (!suggestion || matches.length === 0) return;
-    if (e.key === "ArrowDown") {
+    if (suggestion && matches.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSuggestion({ ...suggestion, activeIndex: (suggestion.activeIndex + 1) % matches.length });
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSuggestion({ ...suggestion, activeIndex: (suggestion.activeIndex - 1 + matches.length) % matches.length });
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertLink(matches[suggestion.activeIndex].title);
+        return;
+      }
+    }
+    if (e.key === "Escape") {
       e.preventDefault();
-      setSuggestion({ ...suggestion, activeIndex: (suggestion.activeIndex + 1) % matches.length });
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSuggestion({ ...suggestion, activeIndex: (suggestion.activeIndex - 1 + matches.length) % matches.length });
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      insertLink(matches[suggestion.activeIndex].title);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setSuggestion(null);
+      if (suggestion) setSuggestion(null);
+      else switchMode("read");
     }
   }
 
@@ -111,22 +149,23 @@ export function NoteEditor({
     if (link) onFollowLink(link.title);
   }
 
-  function renderHighlightedContent(text: string) {
-    const links = parseWikilinks(text);
-    if (links.length === 0) return text;
-    const nodes: React.ReactNode[] = [];
-    let cursor = 0;
-    links.forEach((link, i) => {
-      if (link.start > cursor) nodes.push(text.slice(cursor, link.start));
-      nodes.push(
-        <span key={i} className="text-(--color-accent) underline decoration-(--color-accent)/50">
-          {link.raw}
-        </span>,
-      );
-      cursor = link.end;
-    });
-    if (cursor < text.length) nodes.push(text.slice(cursor));
-    return nodes;
+  function saveContentIfChanged() {
+    if (note && content !== note.content) onSaveContent(content);
+  }
+
+  function switchMode(next: Mode) {
+    if (next === mode) return;
+    if (mode === "edit") {
+      saveContentIfChanged();
+      setSuggestion(null);
+    }
+    setMode(next);
+  }
+
+  function handleToggleTask(line: number) {
+    const next = toggleTaskAtLine(content, line);
+    setContent(next);
+    onSaveContent(next);
   }
 
   if (!note) {
@@ -149,12 +188,44 @@ export function NoteEditor({
     );
   }
 
+  const tags = Array.from(new Set(content.match(/(?<![\p{L}\p{N}&/])#[\p{L}_][\p{L}\p{N}_/-]*/gu) ?? []));
+
   return (
-    <div className="relative h-full flex-1 overflow-y-auto bg-(--color-surface-elevated) px-12 py-10">
+    <div
+      className="relative flex h-full flex-1 flex-col overflow-y-auto bg-(--color-surface-elevated) px-12 py-10"
+      onKeyDown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
+          e.preventDefault();
+          switchMode(mode === "edit" ? "read" : "edit");
+        }
+      }}
+    >
       <div className="mb-3.5 flex items-center gap-2">
         <p className="min-w-0 flex-1 truncate text-[12px] text-(--color-ink-muted)">
           {notebook ? `${notebook.name} / ${note.title || "Sem título"}` : note.title}
         </p>
+        <div className="flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5">
+          {(
+            [
+              { value: "read", label: "Ler" },
+              { value: "edit", label: "Editar" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              onClick={() => switchMode(option.value)}
+              className={cn(
+                "rounded-md px-3 py-1 text-[12px]",
+                mode === option.value
+                  ? "bg-(--color-surface-elevated) font-semibold text-(--color-ink) shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)]"
+                  : "font-medium text-(--color-ink-muted) hover:text-(--color-ink)",
+              )}
+              title={option.value === "edit" ? "Editar Markdown (Ctrl+E)" : "Ler nota renderizada (Ctrl+E)"}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button
@@ -223,37 +294,67 @@ export function NoteEditor({
         onBlur={() => title !== note.title && onSaveTitle(title)}
         className="w-full text-[26px] leading-[1.08] font-bold tracking-[-0.5px] text-(--color-ink) outline-none"
       />
-      <div className="relative mt-4 h-[calc(100%-100px)] w-full">
-        <div
-          ref={backdropRef}
-          aria-hidden
-          className="pointer-events-none absolute inset-0 overflow-hidden text-[14px] leading-[1.6] break-words whitespace-pre-wrap text-(--color-ink)"
-        >
-          {renderHighlightedContent(content)}
+      <p className="mt-2.5 text-[12px] text-(--color-ink-muted)">
+        {describeLastEdit(note.updated_at)}
+        {tags.length > 0 && ` · ${tags.join(" ")}`}
+      </p>
+      <div className="my-4 h-px w-full shrink-0 bg-(--color-divider)" />
+
+      {mode === "read" ? (
+        <div className="min-h-[200px] flex-1 pb-10 [&>div>*:first-child]:mt-0" onDoubleClick={() => switchMode("edit")}>
+          {content.trim() === "" ? (
+            <button
+              onClick={() => switchMode("edit")}
+              className="text-[14px] text-(--color-ink-muted)/70 hover:text-(--color-ink-muted)"
+            >
+              Nota vazia — clique para começar a escrever…
+            </button>
+          ) : (
+            <MarkdownView
+              content={content}
+              noteExists={(linkTitle) => resolveNoteByTitle(notes, linkTitle) !== undefined}
+              onFollowLink={onFollowLink}
+              onToggleTask={handleToggleTask}
+            />
+          )}
         </div>
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => {
-            setContent(e.target.value);
-            updateSuggestionFromCaret(e.target.value, e.target.selectionStart);
-          }}
-          onKeyDown={handleContentKeyDown}
-          onClick={handleContentClick}
-          onScroll={(e) => {
-            if (backdropRef.current) {
-              backdropRef.current.scrollTop = e.currentTarget.scrollTop;
-              backdropRef.current.scrollLeft = e.currentTarget.scrollLeft;
-            }
-          }}
-          onBlur={() => {
-            if (content !== note.content) onSaveContent(content);
-            setSuggestion(null);
-          }}
-          placeholder="Escreva em Markdown… use [[ pra linkar outra nota (ctrl/cmd+clique para abrir)"
-          className="absolute inset-0 h-full w-full resize-none break-words whitespace-pre-wrap text-[14px] leading-[1.6] text-transparent caret-(--color-ink) outline-none placeholder:text-(--color-ink-muted)/60"
-        />
-      </div>
+      ) : (
+        <div className="relative min-h-[320px] w-full flex-1">
+          <div
+            ref={backdropRef}
+            aria-hidden
+            className={cn("pointer-events-none absolute inset-0 overflow-hidden text-(--color-ink)", EDITOR_TEXT_CLASS)}
+          >
+            {highlightMarkdownSource(content)}
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              updateSuggestionFromCaret(e.target.value, e.target.selectionStart);
+            }}
+            onKeyDown={handleContentKeyDown}
+            onClick={handleContentClick}
+            onScroll={(e) => {
+              if (backdropRef.current) {
+                backdropRef.current.scrollTop = e.currentTarget.scrollTop;
+                backdropRef.current.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
+            onBlur={() => {
+              saveContentIfChanged();
+              setSuggestion(null);
+            }}
+            spellCheck={false}
+            placeholder="Escreva em Markdown… use [[ pra linkar outra nota (ctrl/cmd+clique para abrir)"
+            className={cn(
+              "absolute inset-0 h-full w-full resize-none text-transparent caret-(--color-ink) outline-none placeholder:text-(--color-ink-muted)/60",
+              EDITOR_TEXT_CLASS,
+            )}
+          />
+        </div>
+      )}
 
       {suggestion && matches.length > 0 && (
         <div

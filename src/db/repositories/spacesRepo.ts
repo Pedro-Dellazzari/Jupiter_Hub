@@ -39,8 +39,9 @@ export const spacesRepo = {
       `SELECT s.*,
         (SELECT COUNT(*) FROM projects p WHERE p.space_id = s.id AND p.deleted_at IS NULL) AS project_count,
         (SELECT COUNT(*) FROM tasks t
-          JOIN projects p ON p.id = t.project_id
-          WHERE p.space_id = s.id AND t.deleted_at IS NULL) AS task_count,
+          LEFT JOIN projects p ON p.id = t.project_id
+          WHERE COALESCE(t.space_id, p.space_id) = s.id
+            AND t.deleted_at IS NULL AND t.parent_task_id IS NULL) AS task_count,
         (SELECT COUNT(*) FROM notes n
           JOIN notebooks nb ON nb.id = n.notebook_id
           WHERE nb.space_id = s.id AND n.deleted_at IS NULL) AS note_count

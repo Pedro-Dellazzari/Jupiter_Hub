@@ -167,6 +167,7 @@ export default function Notebooks() {
         onSelectNote={setSelectedNoteId}
         onCreateNotebook={handleCreateNotebook}
         onCreateNote={handleCreateNote}
+        onStartRenameNotebook={setRenamingNotebookId}
         onRenameNotebook={handleRenameNotebook}
         onReorderNotebooks={handleReorderNotebooks}
         onMoveNote={handleReorderNotes}

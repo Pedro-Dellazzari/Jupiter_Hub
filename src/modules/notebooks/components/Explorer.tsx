@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, ChevronRight, FileText, NotebookText, Plus, Trash2 } from "lucide-react";
+import { motion } from "motion/react";
+import { DropdownMenu } from "radix-ui";
+import { ChevronDown, ChevronRight, FileText, MoreHorizontal, NotebookText, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "../../../shared/utils/cn";
 import { springs } from "../../../shared/motion/springs";
 import { ConfirmDialog } from "../../../shared/ui/ConfirmDialog";
@@ -16,6 +17,7 @@ type ExplorerProps = {
   onSelectNote: (id: string) => void;
   onCreateNotebook: () => void;
   onCreateNote: (notebookId: string) => void;
+  onStartRenameNotebook: (id: string) => void;
   onRenameNotebook: (id: string, name: string) => void;
   onReorderNotebooks: (orderedIds: string[]) => void;
   onMoveNote: (noteId: string, toNotebookId: string, orderedIdsInTarget: string[]) => void;
@@ -42,6 +44,7 @@ export function Explorer({
   onSelectNote,
   onCreateNotebook,
   onCreateNote,
+  onStartRenameNotebook,
   onRenameNotebook,
   onReorderNotebooks,
   onMoveNote,
@@ -54,7 +57,7 @@ export function Explorer({
   const [hoveredNewNoteFor, setHoveredNewNoteFor] = useState<string | null>(null);
   const [hoveredNewNotebook, setHoveredNewNotebook] = useState(false);
   const [hoveredHeaderId, setHoveredHeaderId] = useState<string | null>(null);
-  const [hoveredDeleteFor, setHoveredDeleteFor] = useState<string | null>(null);
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [deletingNotebookId, setDeletingNotebookId] = useState<string | null>(null);
 
   function endDrag() {
@@ -190,6 +193,13 @@ export function Explorer({
                     setDragging({ kind: "notebook", id: notebook.id });
                   }}
                   onDragEnd={endDrag}
+                  tabIndex={isRenaming ? -1 : 0}
+                  onKeyDown={(e) => {
+                    if (e.key === "F2" && e.target === e.currentTarget) {
+                      e.preventDefault();
+                      onStartRenameNotebook(notebook.id);
+                    }
+                  }}
                   onDragOver={(e) => handleNotebookHeaderDragOver(e, notebook, notebookIndex)}
                   onDrop={(e) => handleNotebookHeaderDrop(e, notebook)}
                   onMouseEnter={() => setHoveredHeaderId(notebook.id)}
@@ -197,7 +207,7 @@ export function Explorer({
                     setHoveredHeaderId((current) => (current === notebook.id ? null : current))
                   }
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md py-2 text-left text-(--color-ink-muted)",
+                    "flex items-center gap-1.5 rounded-md py-2 text-left text-(--color-ink-muted) outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent)/50",
                     isDraggingThis && "cursor-grabbing opacity-40",
                     isFolderTarget && "bg-(--color-accent)/10 ring-1 ring-(--color-accent)/40",
                   )}
@@ -225,11 +235,13 @@ export function Explorer({
                           e.currentTarget.blur();
                         }
                       }}
-                      className="min-w-0 flex-1 rounded-sm bg-(--color-surface) px-1 py-0.5 text-[13px] font-semibold text-(--color-ink) outline outline-(--color-accent)"
+                      className="min-w-0 flex-1 rounded-[5px] bg-(--color-surface-elevated) px-1.5 py-0.5 text-[13px] font-semibold text-(--color-ink) outline-[1.5px] outline-(--color-accent)"
                     />
                   ) : (
                     <button
                       onClick={() => setCollapsed((c) => ({ ...c, [notebook.id]: isOpen }))}
+                      onDoubleClick={() => onStartRenameNotebook(notebook.id)}
+                      title="Duplo clique para renomear"
                       className="flex-1 text-left text-[13px] font-semibold"
                     >
                       {notebook.name}
@@ -256,50 +268,67 @@ export function Explorer({
                   >
                     <Plus className="size-3 shrink-0" strokeWidth={2} />
                   </motion.button>
-                  <AnimatePresence>
-                    {hoveredHeaderId === notebook.id && (
-                      <motion.button
-                        layout
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingNotebookId(notebook.id);
-                        }}
-                        onMouseEnter={() => setHoveredDeleteFor(notebook.id)}
-                        onMouseLeave={() =>
-                          setHoveredDeleteFor((current) => (current === notebook.id ? null : current))
-                        }
-                        initial={{ opacity: 0, x: 10, y: 6 }}
-                        animate={{
-                          opacity: 1,
-                          x: 0,
-                          y: 0,
-                          transition: {
-                            opacity: { duration: 0.12 },
-                            x: springs.gentle,
-                            y: { ...springs.gentle, delay: 0.05 },
-                          },
-                        }}
-                        exit={{
-                          opacity: 0,
-                          x: 10,
-                          y: 6,
-                          transition: { ...springs.gentle, opacity: { duration: 0.1 } },
-                        }}
-                        whileHover={{ scale: 1.15, transition: springs.snappy }}
-                        whileTap={{ scale: 0.85, transition: springs.snappy }}
-                        className={cn(
-                          "flex size-4.5 shrink-0 items-center justify-center rounded-full text-(--color-ink-muted)",
-                          hoveredDeleteFor === notebook.id
-                            ? "bg-(--color-danger)/12 text-(--color-danger)"
-                            : undefined,
-                        )}
-                        title="Excluir pasta"
-                      >
-                        <Trash2 className="size-3 shrink-0" strokeWidth={2} />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                  {!isRenaming && (hoveredHeaderId === notebook.id || menuOpenFor === notebook.id) && (
+                    <DropdownMenu.Root
+                      open={menuOpenFor === notebook.id}
+                      onOpenChange={(open) => setMenuOpenFor(open ? notebook.id : null)}
+                    >
+                      <DropdownMenu.Trigger asChild>
+                        <motion.button
+                          layout
+                          onClick={(e) => e.stopPropagation()}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1, transition: springs.gentle }}
+                          whileHover={{ scale: 1.15, transition: springs.snappy }}
+                          whileTap={{ scale: 0.85, transition: springs.snappy }}
+                          className={cn(
+                            "flex size-4.5 shrink-0 items-center justify-center rounded-full text-(--color-ink-muted) hover:bg-(--color-fill) hover:text-(--color-ink)",
+                            menuOpenFor === notebook.id && "bg-(--color-fill) text-(--color-ink)",
+                          )}
+                          title="Mais opções da pasta"
+                        >
+                          <MoreHorizontal className="size-3 shrink-0" strokeWidth={2} />
+                        </motion.button>
+                      </DropdownMenu.Trigger>
+                      <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                          align="start"
+                          sideOffset={6}
+                          // Sem isso o Radix devolve o foco ao botão "⋯" ao fechar e tira o foco do campo de renomear.
+                          onCloseAutoFocus={(e) => e.preventDefault()}
+                          className="z-50 w-[212px] rounded-xl bg-(--color-surface-elevated) p-1.5 shadow-[0px_8px_24px_-2px_rgba(0,0,0,0.16)]"
+                        >
+                          <DropdownMenu.Item
+                            onSelect={() => onStartRenameNotebook(notebook.id)}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-(--color-ink) outline-none data-[highlighted]:bg-(--color-fill)"
+                          >
+                            <Pencil className="size-3.5" strokeWidth={2} />
+                            Renomear pasta
+                            <span className="ml-auto text-[11px] font-normal text-(--color-ink-muted)">F2</span>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item
+                            onSelect={() => onCreateNote(notebook.id)}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-(--color-ink) outline-none data-[highlighted]:bg-(--color-fill)"
+                          >
+                            <Plus className="size-3.5" strokeWidth={2} />
+                            Nova nota nesta pasta
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Separator className="my-1.5 h-px bg-(--color-divider)" />
+                          <DropdownMenu.Item
+                            onSelect={() => setDeletingNotebookId(notebook.id)}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-(--color-danger) outline-none data-[highlighted]:bg-(--color-danger)/10"
+                          >
+                            <Trash2 className="size-3.5" strokeWidth={2} />
+                            Excluir pasta
+                          </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                      </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                  )}
                 </div>
+                {isRenaming && (
+                  <p className="-mt-1 mb-1 pl-4 text-[11px] text-(--color-ink-muted)/70">↵ Salvar · Esc Cancelar</p>
+                )}
 
                 {isOpen && (
                   <div
