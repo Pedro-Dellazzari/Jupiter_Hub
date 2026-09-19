@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { modules, type ModuleGroup } from "../../modules/registry";
 import { useNavigationStore } from "../store/useNavigationStore";
 import { Glass } from "../../shared/ui/Glass";
+import { LogoMark } from "../../shared/ui/Logo";
 import { cn } from "../../shared/utils/cn";
 import { springs } from "../../shared/motion/springs";
 
@@ -21,8 +22,10 @@ export function Sidebar() {
   return (
     <Glass material="thick" className="flex h-full w-60 shrink-0 flex-col gap-1 px-4 py-5">
       <div className="flex shrink-0 items-center gap-2.5 px-1 pt-1 pb-3">
-        <div className="size-[30px] shrink-0 rounded-lg bg-(--color-accent)" />
-        <span className="text-[17px] font-semibold text-(--color-ink)">Hub</span>
+        <LogoMark size={30} className="shrink-0" />
+        <span className="font-brand text-[17px] font-semibold tracking-[-0.02em] text-(--color-ink)">
+          Jupiter Hub
+        </span>
       </div>
 
       <button className="mb-2 flex shrink-0 items-center gap-2 rounded-lg bg-(--color-fill) px-2.5 py-2 text-left text-(--color-ink-muted)">

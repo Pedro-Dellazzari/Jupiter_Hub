@@ -1,4 +1,4 @@
-# Hub de Produtividade
+# Jupiter Hub
 
 App desktop-first (Tauri 2 + React + TypeScript) para uso pessoal, com todos os dados
 em SQLite local — sem backend remoto. Módulos ativáveis independentemente: Home, Hoje,
