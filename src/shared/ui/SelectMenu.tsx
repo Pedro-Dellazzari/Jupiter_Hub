@@ -58,7 +58,7 @@ export function SelectMenu({ value, options, onChange, emptyLabel, footer, leadi
               onSelect={() => onChange(option.value)}
               className={cn(
                 ITEM_CLASS,
-                option.value === value ? "bg-(--color-accent)/12 text-(--color-accent)" : "text-(--color-ink)",
+                option.value === value ? "bg-(--color-accent)/12 text-(--color-accent-text)" : "text-(--color-ink)",
               )}
             >
               {option.icon}
@@ -69,7 +69,7 @@ export function SelectMenu({ value, options, onChange, emptyLabel, footer, leadi
           {footer && (
             <>
               <DropdownMenu.Separator className="my-1.5 h-px bg-(--color-divider)" />
-              <DropdownMenu.Item onSelect={footer.onSelect} className={cn(ITEM_CLASS, "text-(--color-accent)")}>
+              <DropdownMenu.Item onSelect={footer.onSelect} className={cn(ITEM_CLASS, "text-(--color-accent-text)")}>
                 {footer.icon}
                 {footer.label}
               </DropdownMenu.Item>

@@ -13,11 +13,15 @@
   --color-surface-elevated: oklch(100% 0 0);
   --color-ink: oklch(20% 0.01 250);
   --color-ink-muted: oklch(45% 0.01 250);
-  --color-accent: #007aff;
+  --color-accent: #e8892b;
+  /* Texto/ícone sobre preenchimento accent (branco só dá ~2,6:1 no laranja). */
+  --color-accent-ink: #1d1d1f;
+  /* Accent usado como cor de texto sobre a superfície: laranja mais escuro no claro, para contraste. */
+  --color-accent-text: #b45309;
   --color-brand: #e8892b;
   --color-danger: #ff3b30;
-  --color-warning: #ff9500;
-  --color-warning-ink: #c77800;
+  --color-warning: #ffcc00;
+  --color-warning-ink: #8a6500;
   --color-divider: #e5e5ea;
   --color-track: #eeeef0;
   --color-fill: #f2f2f4;
@@ -38,8 +42,23 @@
   --logo-module-b: #48484a;
 }
 
+/*
+ * Tema: sem escolha do usuário, segue o sistema (prefers-color-scheme).
+ * O botão da sidebar grava `data-theme="light|dark"` no <html> (ver
+ * app/store/useThemeStore.ts), que vence o sistema. Os valores escuros
+ * aparecem duas vezes porque não dá para combinar @media e atributo num
+ * seletor só — ao editar um, edite o outro.
+ */
+:root {
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --logo-tile: #1d1d1f;
     --logo-outline: rgb(255 255 255 / 0.15);
     --logo-module-a: #f6ebd3;
@@ -49,14 +68,39 @@
     --color-surface-elevated: oklch(24% 0.01 250);
     --color-ink: oklch(96% 0.005 250);
     --color-ink-muted: oklch(70% 0.01 250);
-    --color-accent: #0a84ff;
+    --color-accent: #f09a3e;
+    --color-accent-ink: #1d1d1f;
+    --color-accent-text: #f09a3e;
     --color-danger: #ff453a;
-    --color-warning: #ff9f0a;
-    --color-warning-ink: #ff9f0a;
+    --color-warning: #ffd60a;
+    --color-warning-ink: #ffd60a;
     --color-divider: oklch(32% 0.01 250);
     --color-track: oklch(30% 0.01 250);
     --color-fill: oklch(28% 0.01 250);
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --logo-tile: #1d1d1f;
+  --logo-outline: rgb(255 255 255 / 0.15);
+  --logo-module-a: #f6ebd3;
+  --logo-module-b: #6b6358;
+
+  --color-surface: oklch(18% 0.01 250);
+  --color-surface-elevated: oklch(24% 0.01 250);
+  --color-ink: oklch(96% 0.005 250);
+  --color-ink-muted: oklch(70% 0.01 250);
+  --color-accent: #f09a3e;
+  --color-accent-ink: #1d1d1f;
+  --color-accent-text: #f09a3e;
+  --color-danger: #ff453a;
+  --color-warning: #ffd60a;
+  --color-warning-ink: #ffd60a;
+  --color-divider: oklch(32% 0.01 250);
+  --color-track: oklch(30% 0.01 250);
+  --color-fill: oklch(28% 0.01 250);
+  color-scheme: dark;
 }
 
 html,

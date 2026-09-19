@@ -19,7 +19,7 @@ export function EmptyState({ icon: Icon, title, description, ctaLabel, onAction 
       <p className="w-[320px] text-center text-[13px] text-(--color-ink-muted)">{description}</p>
       <button
         onClick={onAction}
-        className="rounded-[10px] bg-(--color-accent) px-[18px] py-2.5 text-[13px] font-semibold text-white"
+        className="rounded-[10px] bg-(--color-accent) px-[18px] py-2.5 text-[13px] font-semibold text-(--color-accent-ink)"
       >
         {ctaLabel}
       </button>

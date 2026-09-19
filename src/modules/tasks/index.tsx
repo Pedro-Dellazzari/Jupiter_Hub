@@ -80,7 +80,7 @@ export default function Tasks() {
               onClick={() => setDialogOpen(true)}
               whileHover={{ scale: 1.03, transition: springs.snappy }}
               whileTap={{ scale: 0.97, transition: springs.snappy }}
-              className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-white hover:brightness-110"
+              className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
             >
               <Plus className="size-3.5" strokeWidth={2.5} />
               Nova tarefa
@@ -89,7 +89,7 @@ export default function Tasks() {
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          <span className="rounded-lg bg-(--color-accent)/12 px-3 py-1.5 text-[12px] font-semibold text-(--color-accent)">
+          <span className="rounded-lg bg-(--color-accent)/12 px-3 py-1.5 text-[12px] font-semibold text-(--color-accent-text)">
             Todas
           </span>
           <button

@@ -38,7 +38,7 @@ export default function Projects() {
             onClick={() => setDialogOpen(true)}
             whileHover={{ scale: 1.03, transition: springs.snappy }}
             whileTap={{ scale: 0.97, transition: springs.snappy }}
-            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-white hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
           >
             <Plus className="size-3.5" strokeWidth={2.5} />
             Novo projeto
@@ -73,7 +73,7 @@ export default function Projects() {
                 title={project.name}
                 trailing={
                   <Badge
-                    className={statusInfo.tone === "active" ? "bg-(--color-accent)/12 text-(--color-accent)" : undefined}
+                    className={statusInfo.tone === "active" ? "bg-(--color-accent)/12 text-(--color-accent-text)" : undefined}
                   >
                     {statusInfo.label}
                   </Badge>

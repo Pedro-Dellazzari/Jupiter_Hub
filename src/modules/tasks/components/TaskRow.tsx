@@ -50,7 +50,7 @@ export function TaskRow({
         style={!isDone ? { borderColor: priority.color } : undefined}
         className={cn(
           "flex size-4 shrink-0 items-center justify-center rounded-full border",
-          isDone ? "border-(--color-accent) bg-(--color-accent) text-white" : "text-transparent",
+          isDone ? "border-(--color-accent) bg-(--color-accent) text-(--color-accent-ink)" : "text-transparent",
         )}
         title={isDone ? "Marcar como a fazer" : "Marcar como concluída"}
       >

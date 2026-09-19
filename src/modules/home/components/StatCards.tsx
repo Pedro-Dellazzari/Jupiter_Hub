@@ -91,7 +91,7 @@ function TimeTrackerCard() {
       icon={<Timer className="size-3.5" strokeWidth={2} />}
       label="Time Tracker"
       value={active ? formatElapsed(elapsedSeconds) : "00:00:00"}
-      valueClassName={active ? "text-(--color-accent)" : undefined}
+      valueClassName={active ? "text-(--color-accent-text)" : undefined}
     >
       <p className="text-[13px] text-(--color-ink-muted)">
         {active ? `${projectName ?? "Sem projeto"} · em andamento` : "Nenhum timer ativo"}

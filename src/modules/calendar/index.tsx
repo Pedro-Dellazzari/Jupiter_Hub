@@ -60,9 +60,9 @@ export default function CalendarModule() {
           <div className="flex-1" />
           <button
             onClick={() => setConnectOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-white"
+            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink)"
           >
-            <span className="flex size-3.5 items-center justify-center rounded-sm bg-white text-[8px] font-semibold text-(--color-accent)">
+            <span className="flex size-3.5 items-center justify-center rounded-sm bg-(--color-accent-ink) text-[8px] font-semibold text-(--color-accent)">
               G
             </span>
             Conectar Gmail ou Outlook
@@ -91,7 +91,7 @@ export default function CalendarModule() {
                     )}
                   >
                     {isToday ? (
-                      <span className="flex size-[22px] items-center justify-center rounded-full bg-(--color-accent) text-[12px] font-semibold text-white">
+                      <span className="flex size-[22px] items-center justify-center rounded-full bg-(--color-accent) text-[12px] font-semibold text-(--color-accent-ink)">
                         {day.getDate()}
                       </span>
                     ) : (

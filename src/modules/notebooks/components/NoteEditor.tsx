@@ -180,7 +180,7 @@ export function NoteEditor({
         </p>
         <button
           onClick={onCreateNote}
-          className="rounded-[10px] bg-(--color-accent) px-[18px] py-2.5 text-[13px] font-semibold text-white"
+          className="rounded-[10px] bg-(--color-accent) px-[18px] py-2.5 text-[13px] font-semibold text-(--color-accent-ink)"
         >
           + Nova nota
         </button>
@@ -371,7 +371,7 @@ export function NoteEditor({
               className={
                 "block w-full truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium " +
                 (i === suggestion.activeIndex
-                  ? "bg-(--color-accent)/12 text-(--color-accent)"
+                  ? "bg-(--color-accent)/12 text-(--color-accent-text)"
                   : "text-(--color-ink) hover:bg-(--color-fill)")
               }
             >

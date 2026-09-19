@@ -42,7 +42,7 @@ function Inline({
                 onClick={() => onFollowLink(token.title)}
                 title={noteExists(token.title) ? token.title : `Criar nota "${token.title}"`}
                 className={cn(
-                  "rounded-[4px] bg-(--color-accent)/12 px-1.5 py-0.5 text-[13px] font-medium text-(--color-accent) hover:bg-(--color-accent)/20",
+                  "rounded-[4px] bg-(--color-accent)/12 px-1.5 py-0.5 text-[13px] font-medium text-(--color-accent-text) hover:bg-(--color-accent)/20",
                   !noteExists(token.title) && "opacity-60 [text-decoration:underline_dotted]",
                 )}
               >
@@ -58,7 +58,7 @@ function Inline({
                   e.preventDefault();
                   openExternal(token.href);
                 }}
-                className="text-(--color-accent) underline decoration-(--color-accent)/40 underline-offset-2 hover:decoration-(--color-accent)"
+                className="text-(--color-accent-text) underline decoration-(--color-accent)/40 underline-offset-2 hover:decoration-(--color-accent)"
               >
                 {token.text}
               </a>
@@ -83,7 +83,7 @@ function Inline({
             );
           case "tag":
             return (
-              <span key={i} className="font-medium text-(--color-accent)">
+              <span key={i} className="font-medium text-(--color-accent-text)">
                 {token.text}
               </span>
             );
@@ -130,7 +130,7 @@ function ListBlock({
               className={cn(
                 "mt-[3px] flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border-[1.5px]",
                 item.checked
-                  ? "border-(--color-accent) bg-(--color-accent) text-white"
+                  ? "border-(--color-accent) bg-(--color-accent) text-(--color-accent-ink)"
                   : "border-(--color-ink-muted)/60 text-transparent hover:border-(--color-accent)",
               )}
             >

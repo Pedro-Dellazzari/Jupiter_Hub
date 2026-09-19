@@ -47,7 +47,7 @@ function SubtaskRow({
         className={cn(
           "flex size-4 shrink-0 items-center justify-center rounded-full border",
           isDone
-            ? "border-(--color-accent) bg-(--color-accent) text-white"
+            ? "border-(--color-accent) bg-(--color-accent) text-(--color-accent-ink)"
             : "border-(--color-divider) text-transparent",
         )}
         title={isDone ? "Marcar como a fazer" : "Marcar como concluída"}

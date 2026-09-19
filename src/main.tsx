@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "@fontsource/sora/latin-600.css";
 import "./styles/index.css";
+import { initTheme } from "./app/store/useThemeStore";
+
+initTheme();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

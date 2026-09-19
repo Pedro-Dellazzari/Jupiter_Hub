@@ -22,7 +22,7 @@ export function ChipSelect<T extends string>({
             className={cn(
               "rounded-full px-3.5 py-2 text-[13px] transition-colors",
               selected
-                ? "bg-(--color-accent)/12 font-semibold text-(--color-accent)"
+                ? "bg-(--color-accent)/12 font-semibold text-(--color-accent-text)"
                 : "bg-(--color-fill) font-medium text-(--color-ink-muted) hover:text-(--color-ink)",
             )}
           >

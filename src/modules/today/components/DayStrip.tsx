@@ -26,7 +26,7 @@ export function DayStrip({ today }: { today: Date }) {
             key={day.toISOString()}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-1 rounded-[14px] px-1 py-2.5",
-              isToday ? "bg-(--color-accent) text-white" : "text-(--color-ink)",
+              isToday ? "bg-(--color-accent) text-(--color-accent-ink)" : "text-(--color-ink)",
             )}
           >
             <span className={cn("text-[11px] font-medium", !isToday && "text-(--color-ink-muted)")}>

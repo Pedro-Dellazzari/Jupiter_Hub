@@ -4,6 +4,7 @@ import { modules, type ModuleGroup } from "../../modules/registry";
 import { useNavigationStore } from "../store/useNavigationStore";
 import { Glass } from "../../shared/ui/Glass";
 import { LogoMark } from "../../shared/ui/Logo";
+import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "../../shared/utils/cn";
 import { springs } from "../../shared/motion/springs";
 
@@ -52,7 +53,7 @@ export function Sidebar() {
                     className={cn(
                       "relative flex items-center gap-2.5 rounded-lg p-2 text-left text-[14px] transition-colors",
                       isActive
-                        ? "font-semibold text-(--color-accent)"
+                        ? "font-semibold text-(--color-accent-text)"
                         : "text-(--color-ink-muted) hover:text-(--color-ink)",
                     )}
                   >
@@ -83,6 +84,7 @@ export function Sidebar() {
       <div className="flex shrink-0 items-center gap-2 px-1.5 py-2.5">
         <div className="size-7 shrink-0 rounded-full bg-[#339966]" />
         <span className="text-[13px] font-medium text-(--color-ink)">Pedro Dellazzari</span>
+        <ThemeToggle className="ml-auto" />
       </div>
     </Glass>
   );

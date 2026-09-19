@@ -20,7 +20,7 @@ export function Backlinks({ note, notes, onSelectNote }: BacklinksProps) {
       <div className="flex h-full w-14 shrink-0 flex-col items-center gap-3 border-l border-(--color-divider) bg-(--color-surface-elevated) px-2 pt-6 pb-5">
         <button
           onClick={() => setExpanded(true)}
-          className="flex size-8 items-center justify-center rounded-[9px] bg-(--color-accent)/12 text-(--color-accent)"
+          className="flex size-8 items-center justify-center rounded-[9px] bg-(--color-accent)/12 text-(--color-accent-text)"
           title="Expandir painel"
         >
           <ChevronLeft className="size-3.5" strokeWidth={2.5} />
@@ -33,7 +33,7 @@ export function Backlinks({ note, notes, onSelectNote }: BacklinksProps) {
             <List className="size-3.5" strokeWidth={2} />
           </div>
           {backlinks.length > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-(--color-accent) px-0.5 text-[8px] font-semibold text-white">
+            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-(--color-accent) px-0.5 text-[8px] font-semibold text-(--color-accent-ink)">
               {backlinks.length}
             </span>
           )}
@@ -44,7 +44,7 @@ export function Backlinks({ note, notes, onSelectNote }: BacklinksProps) {
             <Hash className="size-3.5" strokeWidth={2} />
           </div>
           {tagsCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-(--color-accent) px-0.5 text-[8px] font-semibold text-white">
+            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-(--color-accent) px-0.5 text-[8px] font-semibold text-(--color-accent-ink)">
               {tagsCount}
             </span>
           )}

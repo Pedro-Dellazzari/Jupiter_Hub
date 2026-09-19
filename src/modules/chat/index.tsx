@@ -17,7 +17,7 @@ export default function Chat() {
     <div className="flex h-full items-center justify-center px-10 py-8">
       <div className="flex w-[534px] flex-col items-center gap-5">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-(--color-accent)">
-          <Sparkles className="size-6 text-white" strokeWidth={2} />
+          <Sparkles className="size-6 text-(--color-accent-ink)" strokeWidth={2} />
         </div>
         <h1 className="text-[22px] font-bold tracking-[-0.4px] text-(--color-ink)">
           Como posso ajudar hoje, Pedro?
@@ -43,7 +43,7 @@ export default function Chat() {
             type="submit"
             className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-(--color-accent)"
           >
-            <ArrowUp className="size-3.5 text-white" strokeWidth={2.5} />
+            <ArrowUp className="size-3.5 text-(--color-accent-ink)" strokeWidth={2.5} />
           </button>
         </form>
 

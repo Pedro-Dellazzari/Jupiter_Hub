@@ -49,7 +49,7 @@ export default function Habits() {
             onClick={() => setDialogOpen(true)}
             whileHover={{ scale: 1.03, transition: springs.snappy }}
             whileTap={{ scale: 0.97, transition: springs.snappy }}
-            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-white hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
           >
             <Plus className="size-3.5" strokeWidth={2.5} />
             Novo hábito
@@ -66,7 +66,7 @@ export default function Habits() {
               className={cn(
                 "rounded-lg px-3 py-1.5 text-[12px]",
                 frequencyFilter === filter.value
-                  ? "bg-(--color-accent)/12 font-semibold text-(--color-accent)"
+                  ? "bg-(--color-accent)/12 font-semibold text-(--color-accent-text)"
                   : "font-medium text-(--color-ink-muted) hover:bg-(--color-fill) hover:text-(--color-ink)",
               )}
             >

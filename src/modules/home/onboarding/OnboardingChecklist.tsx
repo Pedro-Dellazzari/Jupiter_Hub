@@ -28,10 +28,10 @@ export function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
                   : "border-[#cccccf]",
               )}
             >
-              {step.done && <Check className="size-3 text-white" strokeWidth={3} />}
+              {step.done && <Check className="size-3 text-(--color-accent-ink)" strokeWidth={3} />}
             </div>
             <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-(--color-accent)/12">
-              <step.icon className="size-4 text-(--color-accent)" strokeWidth={2} />
+              <step.icon className="size-4 text-(--color-accent-text)" strokeWidth={2} />
             </div>
             <div className="flex-1">
               <p className="text-[14px] font-semibold text-(--color-ink)">{step.title}</p>

@@ -169,7 +169,7 @@ export function Explorer({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={springs.snappy}
-            className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-[12px] font-semibold text-white hover:brightness-110"
+            className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
           >
             + Nova pasta
           </motion.button>
@@ -363,7 +363,7 @@ export function Explorer({
                               "flex items-center gap-2 rounded-md py-1.5 pr-2 pl-[18px] text-left text-[13px]",
                               isDraggingThisNote && "cursor-grabbing opacity-40",
                               isActive
-                                ? "bg-(--color-accent)/12 font-semibold text-(--color-accent)"
+                                ? "bg-(--color-accent)/12 font-semibold text-(--color-accent-text)"
                                 : cn("text-(--color-ink)", hoveredNoteId === note.id && "bg-(--color-fill)"),
                             )}
                           >

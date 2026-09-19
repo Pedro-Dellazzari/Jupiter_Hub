@@ -223,7 +223,7 @@ export function CreateTaskDialog({
         <button
           type="submit"
           disabled={!title.trim() || submitting}
-          className="rounded-lg bg-(--color-accent) py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+          className="rounded-lg bg-(--color-accent) py-2 text-[13px] font-semibold text-(--color-accent-ink) disabled:opacity-40"
         >
           {submitting ? "Salvando…" : "Adicionar tarefa"}
         </button>

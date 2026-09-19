@@ -23,7 +23,7 @@ function EmptyCard({
       <p className="w-[220px] text-[12px] text-(--color-ink-muted)">{description}</p>
       <button
         onClick={onAction}
-        className="rounded-[9px] bg-(--color-accent) px-4 py-2 text-[12px] font-semibold text-white"
+        className="rounded-[9px] bg-(--color-accent) px-4 py-2 text-[12px] font-semibold text-(--color-accent-ink)"
       >
         {ctaLabel}
       </button>

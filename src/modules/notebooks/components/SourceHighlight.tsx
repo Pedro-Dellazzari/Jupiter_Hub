@@ -10,7 +10,7 @@ function highlightInline(text: string, keyPrefix: string): ReactNode[] {
     const key = `${keyPrefix}-${i}`;
     if (part.startsWith("[[")) {
       return (
-        <span key={key} className="text-(--color-accent)">
+        <span key={key} className="text-(--color-accent-text)">
           {part}
         </span>
       );

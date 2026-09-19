@@ -44,11 +44,11 @@ export default function TimeTracker() {
       {state.status === "ready" && activeEntry && (
         <Card className="mb-6 flex items-center gap-4 p-5">
           <div className="flex size-10 items-center justify-center rounded-full bg-(--color-accent)/12">
-            <Timer className="size-4 text-(--color-accent)" strokeWidth={2} />
+            <Timer className="size-4 text-(--color-accent-text)" strokeWidth={2} />
           </div>
           <div className="flex-1">
             <p className="text-[13px] text-(--color-ink-muted)">Cronômetro em andamento</p>
-            <p className="text-[22px] font-bold tracking-[-0.4px] text-(--color-accent)">
+            <p className="text-[22px] font-bold tracking-[-0.4px] text-(--color-accent-text)">
               {formatElapsed(activeEntry.started_at, nowMs)}
             </p>
           </div>
@@ -76,7 +76,7 @@ export default function TimeTracker() {
         <div className="mb-4">
           <button
             onClick={() => timeEntriesRepo.start().then(reload)}
-            className="flex items-center gap-1.5 rounded-[10px] bg-(--color-accent) px-4 py-2 text-[13px] font-semibold text-white"
+            className="flex items-center gap-1.5 rounded-[10px] bg-(--color-accent) px-4 py-2 text-[13px] font-semibold text-(--color-accent-ink)"
           >
             <Play className="size-3" strokeWidth={2} fill="currentColor" />
             Iniciar cronômetro

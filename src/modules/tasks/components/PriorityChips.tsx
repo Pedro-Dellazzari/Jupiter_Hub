@@ -19,7 +19,7 @@ export function PriorityChips({ value, onChange }: { value: string; onChange: (v
             className={cn(
               "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] transition-colors",
               selected
-                ? cn("font-semibold", !urgent && "bg-(--color-accent)/12 text-(--color-accent)")
+                ? cn("font-semibold", !urgent && "bg-(--color-accent)/12 text-(--color-accent-text)")
                 : "bg-(--color-fill) font-medium text-(--color-ink-muted) hover:text-(--color-ink)",
             )}
           >
