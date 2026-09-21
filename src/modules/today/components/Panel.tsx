@@ -2,10 +2,24 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card } from "../../../shared/ui/Card";
 
-export function Panel({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+export function Panel({
+  title,
+  trailing,
+  children,
+  className,
+}: {
+  title: string;
+  /** Texto discreto à direita do título (ex.: "2/3 concluídas"). */
+  trailing?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <Card className={`flex flex-col gap-2.5 p-4.5 ${className ?? ""}`}>
-      <p className="text-[14px] font-semibold text-(--color-ink)">{title}</p>
+      <div className="flex items-baseline gap-2">
+        <p className="min-w-0 flex-1 text-[14px] font-semibold text-(--color-ink)">{title}</p>
+        {trailing && <span className="shrink-0 text-[12px] font-medium text-(--color-ink-muted)">{trailing}</span>}
+      </div>
       {children}
     </Card>
   );
