@@ -10,6 +10,8 @@ type NoteEditorProps = {
   notebook: Notebook | null;
   notes: Note[];
   otherNotebooks: Notebook[];
+  /** Caminho legível de uma pasta ("Trabalho / Reuniões"), já que pastas podem ficar dentro de pastas. */
+  folderLabel: (notebookId: string) => string;
   onCreateNote: () => void;
   onSaveTitle: (title: string) => void;
   onSaveContent: (content: string) => void;
@@ -34,6 +36,7 @@ export function NoteEditor({
   notebook,
   notes,
   otherNotebooks,
+  folderLabel,
   onCreateNote,
   onSaveTitle,
   onSaveContent,
@@ -95,7 +98,7 @@ export function NoteEditor({
     >
       <div className="mb-3.5 flex items-center gap-2">
         <p className="min-w-0 flex-1 truncate text-[12px] text-(--color-ink-muted)">
-          {notebook ? `${notebook.name} / ${note.title || "Sem título"}` : note.title}
+          {notebook ? `${folderLabel(notebook.id)} / ${note.title || "Sem título"}` : note.title}
         </p>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
@@ -138,7 +141,7 @@ export function NoteEditor({
                         onSelect={() => onMoveNote(nb.id)}
                         className="cursor-pointer truncate rounded-lg px-2.5 py-2 text-[13px] font-medium text-(--color-ink) outline-none data-[highlighted]:bg-(--color-fill)"
                       >
-                        {nb.name}
+                        {folderLabel(nb.id)}
                       </DropdownMenu.Item>
                     ))}
                   </DropdownMenu.SubContent>

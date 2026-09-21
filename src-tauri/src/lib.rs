@@ -20,6 +20,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/003_tasks_space.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "notebooks_parent",
+            sql: include_str!("../migrations/004_notebooks_parent.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
