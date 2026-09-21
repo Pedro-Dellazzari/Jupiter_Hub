@@ -10,12 +10,10 @@ import {
   Repeat,
   Timer,
   Calendar,
-  Compass,
-  GanttChartSquare,
   type LucideIcon,
 } from "lucide-react";
 
-export type ModuleGroup = "general" | "module" | "view";
+export type ModuleGroup = "general" | "module";
 
 export type ModuleDefinition = {
   id: string;
@@ -24,7 +22,7 @@ export type ModuleDefinition = {
   group: ModuleGroup;
   /** Componente de tela do módulo, carregado sob demanda. */
   Component: LazyExoticComponent<ComponentType>;
-  /** Módulos podem ser desativados pelo usuário; visões (roadmap/gantt) não. */
+  /** Módulos podem ser desativados pelo usuário. */
   toggleable: boolean;
 };
 
@@ -107,22 +105,6 @@ export const modules: ModuleDefinition[] = [
     icon: Calendar,
     group: "module",
     Component: lazy(() => import("./calendar")),
-    toggleable: true,
-  },
-  {
-    id: "roadmap",
-    label: "Roadmap",
-    icon: Compass,
-    group: "view",
-    Component: lazy(() => import("./roadmap")),
-    toggleable: true,
-  },
-  {
-    id: "gantt",
-    label: "Gantt",
-    icon: GanttChartSquare,
-    group: "view",
-    Component: lazy(() => import("./gantt")),
     toggleable: true,
   },
 ];

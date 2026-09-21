@@ -11,10 +11,9 @@ import { springs } from "../../shared/motion/springs";
 const groupLabels: Record<ModuleGroup, string> = {
   general: "Geral",
   module: "Módulos",
-  view: "Visões",
 };
 
-const groupOrder: ModuleGroup[] = ["general", "module", "view"];
+const groupOrder: ModuleGroup[] = ["general", "module"];
 
 export function Sidebar() {
   const activeModuleId = useNavigationStore((s) => s.activeModuleId);

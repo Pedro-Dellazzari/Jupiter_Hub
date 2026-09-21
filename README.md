@@ -2,8 +2,7 @@
 
 App desktop-first (Tauri 2 + React + TypeScript) para uso pessoal, com todos os dados
 em SQLite local — sem backend remoto. Módulos ativáveis independentemente: Home, Hoje,
-Chat com IA, Cadernos, Tarefas, Projetos, Espaços, Hábitos, Time Tracker, Calendário,
-mais as visões Roadmap e Gantt.
+Chat com IA, Cadernos, Tarefas, Projetos, Espaços, Hábitos, Time Tracker, Calendário.
 
 ## Pré-requisitos
 
