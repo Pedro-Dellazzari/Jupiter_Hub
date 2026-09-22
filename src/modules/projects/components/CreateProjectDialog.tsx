@@ -26,6 +26,7 @@ export function CreateProjectDialog({
     spaceId: string | null;
     status: string;
     color: string;
+    description: string | null;
     dueDate: string | null;
   }) => Promise<void>;
 }) {
@@ -33,6 +34,7 @@ export function CreateProjectDialog({
   const [spaceId, setSpaceId] = useState("");
   const [status, setStatus] = useState<string>("planning");
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +47,19 @@ export function CreateProjectDialog({
     setSubmitting(true);
     setError(null);
     try {
-      await onCreate({ name: trimmed, spaceId: spaceId || null, status, color, dueDate: dueDate || null });
+      await onCreate({
+        name: trimmed,
+        spaceId: spaceId || null,
+        status,
+        color,
+        description: description.trim() || null,
+        dueDate: dueDate || null,
+      });
       setName("");
       setSpaceId("");
       setStatus("planning");
       setColor(COLOR_OPTIONS[0]);
+      setDescription("");
       setDueDate("");
       onOpenChange(false);
     } catch {
@@ -103,6 +113,17 @@ export function CreateProjectDialog({
           <span className="text-[13px] font-medium text-(--color-ink-muted)">Status</span>
           <ChipSelect options={STATUS_OPTIONS} value={status} onChange={setStatus} />
         </div>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] font-medium text-(--color-ink-muted)">Descrição (opcional)</span>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Sobre o que é esse projeto?"
+            rows={2}
+            className="resize-none rounded-lg border border-(--color-divider) bg-(--color-surface) px-3 py-2 text-[13px] text-(--color-ink) outline-none focus:border-(--color-accent)"
+          />
+        </label>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[13px] font-medium text-(--color-ink-muted)">Cor</span>

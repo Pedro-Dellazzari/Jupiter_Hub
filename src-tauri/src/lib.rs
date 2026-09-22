@@ -20,6 +20,30 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/003_tasks_space.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "notebooks_parent",
+            sql: include_str!("../migrations/004_notebooks_parent.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "sync_readiness",
+            sql: include_str!("../migrations/005_sync_readiness.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "sync_state",
+            sql: include_str!("../migrations/006_sync_state.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 7,
+            description: "milestones",
+            sql: include_str!("../migrations/007_milestones.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
@@ -27,6 +51,8 @@ fn migrations() -> Vec<Migration> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_sql::Builder::default()
                 .add_migrations("sqlite:hub.db", migrations())

@@ -6,6 +6,7 @@ import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { Explorer } from "./components/Explorer";
 import { NoteEditor } from "./components/NoteEditor";
 import { Backlinks } from "./components/Backlinks";
+import { childrenOf, descendantIds, flattenFolders, folderPath } from "./utils/folders";
 import { parseWikilinks, renameWikilinks, resolveNoteByTitle } from "./utils/links";
 
 function nextNotebookName(existingNames: string[]): string {
@@ -46,10 +47,14 @@ export default function Notebooks() {
     notesState.reload();
   }
 
-  async function handleCreateNotebook() {
+  async function handleCreateNotebook(parentId: string | null) {
+    const siblings = childrenOf(notebooks, parentId);
+    const parent = notebooks.find((n) => n.id === parentId);
     const notebook = await notebooksRepo.create({
-      name: nextNotebookName(notebooks.map((n) => n.name)),
-      sort_order: notebooks.length,
+      name: nextNotebookName(siblings.map((n) => n.name)),
+      parent_id: parentId,
+      space_id: parent?.space_id ?? null,
+      sort_order: siblings.length,
     });
     reload();
     setRenamingNotebookId(notebook.id);
@@ -63,14 +68,19 @@ export default function Notebooks() {
     notebooksRepo.update(id, { name: trimmed }).then(reload);
   }
 
-  function handleReorderNotebooks(orderedIds: string[]) {
-    notebooksRepo.reorder(orderedIds).then(reload);
+  /** Move `id` para `parentId` (ou só reordena entre irmãs), já com a ordem final das pastas irmãs. */
+  function handleMoveNotebook(id: string, parentId: string | null, orderedIds: string[]) {
+    // Uma pasta nunca pode entrar nela mesma nem em uma de suas subpastas.
+    if (parentId !== null && (parentId === id || descendantIds(notebooks, id).has(parentId))) return;
+    notebooksRepo.reorderWithin(parentId, orderedIds).then(reload);
   }
 
   async function handleDeleteNotebook(id: string) {
-    const notesToDelete = notes.filter((n) => n.notebook_id === id);
+    // Excluir uma pasta leva junto as subpastas e todas as notas dentro delas.
+    const folderIds = new Set([id, ...descendantIds(notebooks, id)]);
+    const notesToDelete = notes.filter((n) => folderIds.has(n.notebook_id));
     await Promise.all(notesToDelete.map((n) => notesRepo.remove(n.id)));
-    await notebooksRepo.remove(id);
+    await Promise.all([...folderIds].map((folderId) => notebooksRepo.remove(folderId)));
     if (selectedNote && notesToDelete.some((n) => n.id === selectedNote.id)) {
       setSelectedNoteId(null);
     }
@@ -154,7 +164,9 @@ export default function Notebooks() {
     ? (notebooks.find((n) => n.id === selectedNote.notebook_id) ?? null)
     : null;
   const otherNotebooks = selectedNote
-    ? notebooks.filter((n) => n.id !== selectedNote.notebook_id)
+    ? flattenFolders(notebooks)
+        .map((entry) => entry.notebook)
+        .filter((n) => n.id !== selectedNote.notebook_id)
     : [];
 
   return (
@@ -169,7 +181,7 @@ export default function Notebooks() {
         onCreateNote={handleCreateNote}
         onStartRenameNotebook={setRenamingNotebookId}
         onRenameNotebook={handleRenameNotebook}
-        onReorderNotebooks={handleReorderNotebooks}
+        onMoveNotebook={handleMoveNotebook}
         onMoveNote={handleReorderNotes}
         onDeleteNotebook={handleDeleteNotebook}
       />
@@ -178,6 +190,7 @@ export default function Notebooks() {
         notebook={selectedNotebook}
         notes={notes}
         otherNotebooks={otherNotebooks}
+        folderLabel={(id) => folderPath(notebooks, id)}
         onCreateNote={() => handleCreateNote(notebooks[0]?.id ?? "")}
         onSaveTitle={handleSaveTitle}
         onSaveContent={(content) =>

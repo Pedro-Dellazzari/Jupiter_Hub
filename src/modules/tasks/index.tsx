@@ -11,6 +11,7 @@ import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { springs } from "../../shared/motion/springs";
 import { cn } from "../../shared/utils/cn";
 import { CreateTaskDialog } from "./components/CreateTaskDialog";
+import { TaskBoard } from "./components/TaskBoard";
 import { TaskDetailPanel } from "./components/TaskDetailPanel";
 import { TaskRow } from "./components/TaskRow";
 import { groupTasksByDueDate, type TaskGroupKey } from "./utils/dateGroups";
@@ -38,6 +39,7 @@ export default function Tasks() {
   const projectsState = useRepoList(projectsRepo.list);
   const spacesState = useRepoList(spacesRepo.list);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [view, setView] = useState<"list" | "board">("list");
   const [spaceFilter, setSpaceFilter] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -65,13 +67,25 @@ export default function Tasks() {
           <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">Tarefas</h1>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5">
-              <button className="rounded-md bg-(--color-surface-elevated) px-3 py-1.5 text-[12px] font-semibold text-(--color-ink) shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)]">
+              <button
+                onClick={() => setView("list")}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-[12px] font-semibold",
+                  view === "list"
+                    ? "bg-(--color-surface-elevated) text-(--color-ink) shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)]"
+                    : "text-(--color-ink-muted) hover:text-(--color-ink)",
+                )}
+              >
                 Lista
               </button>
               <button
-                disabled
-                title="Em breve"
-                className="cursor-not-allowed rounded-md px-3 py-1.5 text-[12px] font-medium text-(--color-ink-muted) opacity-60"
+                onClick={() => setView("board")}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-[12px] font-semibold",
+                  view === "board"
+                    ? "bg-(--color-surface-elevated) text-(--color-ink) shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)]"
+                    : "text-(--color-ink-muted) hover:text-(--color-ink)",
+                )}
               >
                 Board
               </button>
@@ -92,20 +106,6 @@ export default function Tasks() {
           <span className="rounded-lg bg-(--color-accent)/12 px-3 py-1.5 text-[12px] font-semibold text-(--color-accent-text)">
             Todas
           </span>
-          <button
-            disabled
-            title="Em breve"
-            className="cursor-not-allowed rounded-lg px-3 py-1.5 text-[12px] font-medium text-(--color-ink-muted) opacity-60"
-          >
-            Tarefas
-          </button>
-          <button
-            disabled
-            title="Em breve"
-            className="cursor-not-allowed rounded-lg px-3 py-1.5 text-[12px] font-medium text-(--color-ink-muted) opacity-60"
-          >
-            Projetos
-          </button>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button className={FILTER_TRIGGER_CLASS}>
@@ -164,7 +164,7 @@ export default function Tasks() {
             onAction={() => setDialogOpen(true)}
           />
         )}
-        {tasksState.state.status === "ready" && filteredTasks.length > 0 && (
+        {tasksState.state.status === "ready" && filteredTasks.length > 0 && view === "list" && (
           <div className="flex flex-col gap-1">
             {groups.map((group) => {
               const Icon = GROUP_ICONS[group.key];
@@ -189,6 +189,7 @@ export default function Tasks() {
                         selected={task.id === selectedTaskId}
                         onSelect={setSelectedTaskId}
                         onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
+                        onSubtasksChanged={tasksState.reload}
                       />
                     ))}
                   </div>
@@ -196,6 +197,17 @@ export default function Tasks() {
               );
             })}
           </div>
+        )}
+
+        {tasksState.state.status === "ready" && filteredTasks.length > 0 && view === "board" && (
+          <TaskBoard
+            tasks={filteredTasks}
+            today={today}
+            selectedTaskId={selectedTaskId}
+            onSelect={setSelectedTaskId}
+            onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
+            onChanged={tasksState.reload}
+          />
         )}
       </div>
 

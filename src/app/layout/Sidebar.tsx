@@ -1,9 +1,11 @@
 import { Plus, Search } from "lucide-react";
 import { motion } from "motion/react";
 import { modules, type ModuleGroup } from "../../modules/registry";
+import { useAccountStore } from "../store/useAccountStore";
 import { useNavigationStore } from "../store/useNavigationStore";
 import { Glass } from "../../shared/ui/Glass";
 import { LogoMark } from "../../shared/ui/Logo";
+import { SyncIndicator } from "./SyncIndicator";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "../../shared/utils/cn";
 import { springs } from "../../shared/motion/springs";
@@ -18,6 +20,7 @@ const groupOrder: ModuleGroup[] = ["general", "module"];
 export function Sidebar() {
   const activeModuleId = useNavigationStore((s) => s.activeModuleId);
   const setActiveModule = useNavigationStore((s) => s.setActiveModule);
+  const name = useAccountStore((s) => s.name);
 
   return (
     <Glass material="thick" className="flex h-full w-60 shrink-0 flex-col gap-1 px-4 py-5">
@@ -82,8 +85,11 @@ export function Sidebar() {
 
       <div className="flex shrink-0 items-center gap-2 px-1.5 py-2.5">
         <div className="size-7 shrink-0 rounded-full bg-[#339966]" />
-        <span className="text-[13px] font-medium text-(--color-ink)">Pedro Dellazzari</span>
-        <ThemeToggle className="ml-auto" />
+        <span className="min-w-0 truncate text-[13px] font-medium text-(--color-ink)">{name}</span>
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          <SyncIndicator />
+          <ThemeToggle />
+        </div>
       </div>
     </Glass>
   );

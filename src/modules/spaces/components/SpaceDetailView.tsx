@@ -71,7 +71,7 @@ export function SpaceDetailView({ space, onBack }: { space: SpaceWithStats; onBa
   );
   const notebooks = useMemo(
     () =>
-      notebooksState.state.status === "ready" ? notebooksState.state.items.filter((n) => n.space_id === space.id) : [],
+      notebooksState.state.status === "ready" ? notebooksState.state.items.filter((n) => n.space_id === space.id && !n.parent_id) : [],
     [notebooksState.state, space.id],
   );
 

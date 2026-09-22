@@ -20,6 +20,7 @@ export function CreateTaskDialog({
   projects,
   spaces,
   defaultSpaceId,
+  defaultProjectId,
   onCreateSpace,
   onCreate,
 }: {
@@ -29,6 +30,8 @@ export function CreateTaskDialog({
   spaces: Space[];
   /** Espaço pré-selecionado (ex: o filtro de Espaço ativo na lista). */
   defaultSpaceId?: string | null;
+  /** Projeto pré-selecionado (ex: o botão "Nova tarefa" dentro da página de um projeto). */
+  defaultProjectId?: string | null;
   onCreateSpace: (name: string) => Promise<Space>;
   onCreate: (input: CreateTaskInput) => Promise<void>;
 }) {
@@ -44,6 +47,7 @@ export function CreateTaskDialog({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const effectiveSpaceId = spaceId || defaultSpaceId || "";
+  const effectiveProjectId = projectId || defaultProjectId || "";
   // Com um Espaço escolhido, só oferece os projetos dele — evita uma tarefa "de um Espaço" com projeto de outro.
   const visibleProjects = useMemo(
     () => (effectiveSpaceId ? projects.filter((p) => p.space_id === effectiveSpaceId) : projects),
@@ -98,9 +102,9 @@ export function CreateTaskDialog({
     try {
       await onCreate({
         title: trimmed,
-        projectId: projectId || null,
+        projectId: effectiveProjectId || null,
         // Com projeto, o Espaço é herdado dele; sem projeto, a tarefa fica direto no Espaço escolhido.
-        spaceId: projectId ? null : effectiveSpaceId || null,
+        spaceId: effectiveProjectId ? null : effectiveSpaceId || null,
         priority,
         dueDate: dueDate || null,
       });
@@ -190,14 +194,14 @@ export function CreateTaskDialog({
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <span className="text-[13px] font-medium text-(--color-ink-muted)">Projeto</span>
               <SelectMenu
-                value={projectId}
+                value={effectiveProjectId}
                 options={projectOptions}
                 onChange={handleProjectChange}
                 emptyLabel="Sem projeto"
               />
             </div>
           </div>
-          {effectiveSpaceId && !projectId && (
+          {effectiveSpaceId && !effectiveProjectId && (
             <p className="text-[12px] text-(--color-ink-muted)/70">
               Sem projeto? Tudo bem — a tarefa fica direto no espaço.
             </p>

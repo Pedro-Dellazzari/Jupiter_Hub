@@ -26,3 +26,8 @@ dist-ssr
 .claude/
 
 .mcp.json
+
+# Variáveis de ambiente locais (chaves do Supabase)
+.env
+.env.*
+!.env.example

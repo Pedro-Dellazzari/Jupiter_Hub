@@ -14,8 +14,3 @@ export const nextEvent = {
   title: "Daily standup — Compliance",
   source: "google" as const,
 };
-
-export const studyRoadmap = {
-  nextStep: "Modelagem de dados com dbt",
-  progress: 42,
-};
