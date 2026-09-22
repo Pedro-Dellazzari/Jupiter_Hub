@@ -90,7 +90,16 @@ export default function Spaces() {
   const [selectedSpace, setSelectedSpace] = useState<SpaceWithStats | null>(null);
 
   if (selectedSpace) {
-    return <SpaceDetailView space={selectedSpace} onBack={() => setSelectedSpace(null)} />;
+    return (
+      <SpaceDetailView
+        space={selectedSpace}
+        onBack={() => setSelectedSpace(null)}
+        onDeleted={() => {
+          setSelectedSpace(null);
+          reload();
+        }}
+      />
+    );
   }
 
   return (

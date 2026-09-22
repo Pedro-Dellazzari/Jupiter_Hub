@@ -37,7 +37,8 @@ export const useAccountStore = create<AccountState>((set) => ({
         } else {
           set({ status: "onboarding" });
         }
-      } catch {
+      } catch (err) {
+        console.error("Falha ao abrir o banco local:", err);
         loading = null;
         set({ status: "error" });
       }

@@ -74,6 +74,9 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
 /** Checa atualizações ao abrir e a cada 4h enquanto a janela está visível. Devolve a função que desliga o timer. */
 export function startAutoUpdateCheck() {
+  // Em dev o app roda como 0.1.0 (o CI só aplica a versão da tag no build), então sempre haveria "nova versão".
+  if (import.meta.env.DEV) return () => {};
+
   const trigger = () => void useUpdateStore.getState().checkForUpdate();
   trigger();
 

@@ -97,4 +97,37 @@ export const spacesRepo = {
       id,
     ]);
   },
+
+  /**
+   * Exclui um Espaço. Com `deleteContents`, tarefas (inclusive subtarefas e as herdadas via projeto)
+   * e projetos do Espaço também são excluídos; sem ele, ficam órfãos (space_id = NULL).
+   * Cadernos sempre ficam órfãos.
+   */
+  async remove(id: string, { deleteContents }: { deleteContents: boolean }): Promise<void> {
+    const db = await getDb();
+    const timestamp = now();
+    if (deleteContents) {
+      await db.execute(
+        `UPDATE tasks SET deleted_at = $1, updated_at = $1
+         WHERE deleted_at IS NULL AND (
+           space_id = $2
+           OR project_id IN (SELECT id FROM projects WHERE space_id = $2)
+           OR parent_task_id IN (
+             SELECT id FROM tasks
+             WHERE space_id = $2 OR project_id IN (SELECT id FROM projects WHERE space_id = $2)
+           )
+         )`,
+        [timestamp, id],
+      );
+      await db.execute(
+        "UPDATE projects SET deleted_at = $1, updated_at = $1 WHERE space_id = $2 AND deleted_at IS NULL",
+        [timestamp, id],
+      );
+    } else {
+      await db.execute("UPDATE tasks SET space_id = NULL, updated_at = $1 WHERE space_id = $2", [timestamp, id]);
+      await db.execute("UPDATE projects SET space_id = NULL, updated_at = $1 WHERE space_id = $2", [timestamp, id]);
+    }
+    await db.execute("UPDATE notebooks SET space_id = NULL, updated_at = $1 WHERE space_id = $2", [timestamp, id]);
+    await db.execute("UPDATE spaces SET deleted_at = $1, updated_at = $1 WHERE id = $2", [timestamp, id]);
+  },
 };

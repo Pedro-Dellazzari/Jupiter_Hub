@@ -1,0 +1,4 @@
+# Migrations são embutidas no binário (include_str!) e o sqlx guarda o checksum de cada uma no banco.
+# As releases já publicadas foram compiladas com CRLF (runner Windows) — mudar os bytes quebra quem já usa o app.
+# Nunca edite uma migration já lançada: crie uma nova.
+src-tauri/migrations/*.sql text eol=crlf
