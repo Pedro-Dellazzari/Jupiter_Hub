@@ -164,6 +164,9 @@ export const tasksRepo = {
   /** Remove (soft-delete) a tarefa e suas subtarefas. */
   async remove(id: string): Promise<void> {
     const db = await getDb();
-    await db.execute("UPDATE tasks SET deleted_at = $1 WHERE id = $2 OR parent_task_id = $2", [now(), id]);
+    await db.execute("UPDATE tasks SET deleted_at = $1, updated_at = $1 WHERE id = $2 OR parent_task_id = $2", [
+      now(),
+      id,
+    ]);
   },
 };

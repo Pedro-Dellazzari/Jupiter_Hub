@@ -7,6 +7,8 @@ on:
 
 jobs:
   publish-tauri:
+    # Environment do GitHub com os secrets do Supabase (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).
+    environment: prod-release
     permissions:
       contents: write
     runs-on: windows-latest
@@ -44,9 +46,20 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: check Supabase build variables
+        shell: bash
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: node .github/scripts/check-supabase-env.mjs
+
+      # As variáveis VITE_* são embutidas no bundle na hora do build (pnpm build, chamado pelo tauri build).
+      # Ficam só neste passo, e não no job inteiro, para os outros steps não as enxergarem.
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Jupiter Hub v__VERSION__'

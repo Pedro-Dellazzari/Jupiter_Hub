@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useFirstName } from "../../app/store/useAccountStore";
 import { spacesRepo } from "../../db/repositories/spacesRepo";
 import { OnboardingView } from "./onboarding/OnboardingView";
 import { DashboardView } from "./DashboardView";
@@ -7,6 +8,7 @@ type LoadState = { status: "loading" } | { status: "error" } | { status: "empty"
 
 export default function Home() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const firstName = useFirstName();
 
   function checkSpaces() {
     spacesRepo
@@ -32,7 +34,7 @@ export default function Home() {
   }
 
   if (state.status === "empty") {
-    return <OnboardingView name="Pedro" onSpaceCreated={checkSpaces} />;
+    return <OnboardingView name={firstName} onSpaceCreated={checkSpaces} />;
   }
 
   return <DashboardView />;

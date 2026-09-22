@@ -1,13 +1,18 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Sidebar } from "./Sidebar";
 import { modules } from "../../modules/registry";
+import { useAccountStore } from "../store/useAccountStore";
 import { useNavigationStore } from "../store/useNavigationStore";
 import { springs } from "../../shared/motion/springs";
+import { startAutoSync } from "../../sync/useSyncStore";
 
 export function AppShell() {
   const activeModuleId = useNavigationStore((s) => s.activeModuleId);
   const activeModule = modules.find((m) => m.id === activeModuleId) ?? modules[0];
+  const mode = useAccountStore((s) => s.mode);
+
+  useEffect(() => (mode === "cloud" ? startAutoSync() : undefined), [mode]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-(--color-surface)" data-tauri-drag-region>

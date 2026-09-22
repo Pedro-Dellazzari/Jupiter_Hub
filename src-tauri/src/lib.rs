@@ -26,6 +26,18 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/004_notebooks_parent.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "sync_readiness",
+            sql: include_str!("../migrations/005_sync_readiness.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "sync_state",
+            sql: include_str!("../migrations/006_sync_state.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

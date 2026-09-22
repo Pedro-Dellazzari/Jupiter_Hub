@@ -71,7 +71,7 @@ export const notebooksRepo = {
 
   async remove(id: string): Promise<void> {
     const db = await getDb();
-    await db.execute("UPDATE notebooks SET deleted_at = $1 WHERE id = $2", [now(), id]);
+    await db.execute("UPDATE notebooks SET deleted_at = $1, updated_at = $1 WHERE id = $2", [now(), id]);
   },
 
   /** Define a pasta pai e a ordem de um conjunto de pastas irmãs — usado ao reordenar ou aninhar por drag-and-drop. */

@@ -81,7 +81,7 @@ export const notesRepo = {
 
   async remove(id: string): Promise<void> {
     const db = await getDb();
-    await db.execute("UPDATE notes SET deleted_at = $1 WHERE id = $2", [now(), id]);
+    await db.execute("UPDATE notes SET deleted_at = $1, updated_at = $1 WHERE id = $2", [now(), id]);
   },
 
   /** Define a ordem (e a pasta) de um conjunto de notas — usado ao reordenar por drag-and-drop ou mover entre pastas. */

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { ArrowUp, Sparkles } from "lucide-react";
+import { useFirstName } from "../../app/store/useAccountStore";
 
 const SUGGESTIONS = ["Quais são minhas pendências?", "Resuma meu dia", "O que venceu esta semana?"];
 
 export default function Chat() {
   const [value, setValue] = useState("");
   const [notice, setNotice] = useState(false);
+  const firstName = useFirstName();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,7 +22,7 @@ export default function Chat() {
           <Sparkles className="size-6 text-(--color-accent-ink)" strokeWidth={2} />
         </div>
         <h1 className="text-[22px] font-bold tracking-[-0.4px] text-(--color-ink)">
-          Como posso ajudar hoje, Pedro?
+          Como posso ajudar hoje, {firstName}?
         </h1>
         <p className="w-[380px] text-center text-[13px] text-(--color-ink-muted)">
           Pergunte sobre suas tarefas, projetos, hábitos ou peça um resumo do seu dia.
