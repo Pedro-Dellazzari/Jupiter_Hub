@@ -29,6 +29,10 @@ export const SYNC_TABLES: readonly SyncTable[] = [
       ...timestamps,
     ],
   },
+  {
+    name: "milestones",
+    columns: ["id", "project_id", "title", "due_date", "completed_at", "sort_order", ...timestamps],
+  },
   { name: "notebooks", columns: ["id", "space_id", "parent_id", "name", "color", "icon", "sort_order", ...timestamps] },
   {
     name: "notes",

@@ -17,6 +17,11 @@ export type Project = {
   deleted_at: string | null;
 };
 
+/** Campos editáveis pelo diálogo de edição do projeto. */
+export type ProjectPatch = Partial<Pick<Project, "name" | "description" | "status" | "color" | "space_id" | "due_date">>;
+
+const PATCHABLE_COLUMNS = ["name", "description", "status", "color", "space_id", "due_date"] as const;
+
 export const projectsRepo = {
   async list(): Promise<Project[]> {
     const db = await getDb();
@@ -25,11 +30,18 @@ export const projectsRepo = {
     );
   },
 
+  async get(id: string): Promise<Project | null> {
+    const db = await getDb();
+    const rows = await db.select<Project[]>("SELECT * FROM projects WHERE id = $1 AND deleted_at IS NULL", [id]);
+    return rows[0] ?? null;
+  },
+
   async create(input: {
     name: string;
     space_id?: string | null;
     status?: string;
     color?: string | null;
+    description?: string | null;
     due_date?: string | null;
   }): Promise<Project> {
     const db = await getDb();
@@ -37,7 +49,7 @@ export const projectsRepo = {
       id: newId(),
       space_id: input.space_id ?? null,
       name: input.name,
-      description: null,
+      description: input.description ?? null,
       status: input.status ?? "planning",
       color: input.color ?? null,
       icon: null,
@@ -67,5 +79,24 @@ export const projectsRepo = {
       ],
     );
     return project;
+  },
+
+  /** Atualiza só os campos informados. */
+  async update(id: string, patch: ProjectPatch): Promise<void> {
+    const columns = PATCHABLE_COLUMNS.filter((column) => column in patch);
+    if (columns.length === 0) return;
+    const db = await getDb();
+    const assignments = columns.map((column, index) => `${column} = $${index + 1}`);
+    const values = columns.map((column) => patch[column] ?? null);
+    await db.execute(
+      `UPDATE projects SET ${assignments.join(", ")}, updated_at = $${columns.length + 1} WHERE id = $${columns.length + 2}`,
+      [...values, now(), id],
+    );
+  },
+
+  /** Remove (soft-delete) o projeto. Tarefas ligadas a ele continuam existindo, só deixam de mostrar o projeto. */
+  async remove(id: string): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE projects SET deleted_at = $1, updated_at = $1 WHERE id = $2", [now(), id]);
   },
 };

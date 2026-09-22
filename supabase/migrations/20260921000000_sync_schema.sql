@@ -161,6 +161,20 @@ create table if not exists public.calendar_events (
   deleted_at text
 );
 
+create table if not exists public.milestones (
+  id uuid primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  server_updated_at timestamptz not null default clock_timestamp(),
+  project_id uuid not null,
+  title text not null,
+  due_date text,
+  completed_at text,
+  sort_order integer not null default 0,
+  created_at text not null,
+  updated_at text not null,
+  deleted_at text
+);
+
 create table if not exists public.tags (
   id uuid primary key,
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -208,7 +222,7 @@ declare
 begin
   foreach t in array array[
     'spaces', 'projects', 'tasks', 'notebooks', 'notes', 'habits',
-    'habit_logs', 'time_entries', 'calendar_events', 'tags', 'entity_tags'
+    'habit_logs', 'time_entries', 'calendar_events', 'tags', 'entity_tags', 'milestones'
   ]
   loop
     execute format('alter table public.%I enable row level security', t);

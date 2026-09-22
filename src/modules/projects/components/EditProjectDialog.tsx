@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Project } from "../../../db/repositories/projectsRepo";
 import type { Space } from "../../../db/repositories/spacesRepo";
 import { ChipSelect } from "../../../shared/ui/ChipSelect";
 import { Dialog } from "../../../shared/ui/Dialog";
@@ -12,33 +13,49 @@ const STATUS_OPTIONS = [
 
 const COLOR_OPTIONS = ["#007aff", "#8c59f2", "#33a673", "#f28c26", "#ff2d78", "#12b3a8"];
 
-export function CreateProjectDialog({
+export type EditProjectInput = {
+  name: string;
+  spaceId: string | null;
+  status: string;
+  color: string;
+  description: string | null;
+  dueDate: string | null;
+};
+
+export function EditProjectDialog({
   open,
   onOpenChange,
+  project,
   spaces,
-  onCreate,
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  project: Project;
   spaces: Space[];
-  onCreate: (input: {
-    name: string;
-    spaceId: string | null;
-    status: string;
-    color: string;
-    description: string | null;
-    dueDate: string | null;
-  }) => Promise<void>;
+  onSave: (input: EditProjectInput) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [spaceId, setSpaceId] = useState("");
-  const [status, setStatus] = useState<string>("planning");
-  const [color, setColor] = useState(COLOR_OPTIONS[0]);
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [name, setName] = useState(project.name);
+  const [spaceId, setSpaceId] = useState(project.space_id ?? "");
+  const [status, setStatus] = useState<string>(project.status);
+  const [color, setColor] = useState(project.color ?? COLOR_OPTIONS[0]);
+  const [description, setDescription] = useState(project.description ?? "");
+  const [dueDate, setDueDate] = useState(project.due_date ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Reabre com os dados atuais do projeto a cada vez (o dialog fica montado entre aberturas).
+  useEffect(() => {
+    if (!open) return;
+    setName(project.name);
+    setSpaceId(project.space_id ?? "");
+    setStatus(project.status);
+    setColor(project.color ?? COLOR_OPTIONS[0]);
+    setDescription(project.description ?? "");
+    setDueDate(project.due_date ?? "");
+    setError(null);
+  }, [open, project]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +64,7 @@ export function CreateProjectDialog({
     setSubmitting(true);
     setError(null);
     try {
-      await onCreate({
+      await onSave({
         name: trimmed,
         spaceId: spaceId || null,
         status,
@@ -55,12 +72,6 @@ export function CreateProjectDialog({
         description: description.trim() || null,
         dueDate: dueDate || null,
       });
-      setName("");
-      setSpaceId("");
-      setStatus("planning");
-      setColor(COLOR_OPTIONS[0]);
-      setDescription("");
-      setDueDate("");
       onOpenChange(false);
     } catch {
       setError("Não foi possível salvar. Tente novamente.");
@@ -73,12 +84,9 @@ export function CreateProjectDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!submitting) {
-          onOpenChange(next);
-          if (!next) setError(null);
-        }
+        if (!submitting) onOpenChange(next);
       }}
-      title="Criar projeto"
+      title="Editar projeto"
       initialFocusRef={inputRef}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -160,7 +168,7 @@ export function CreateProjectDialog({
           disabled={!name.trim() || submitting}
           className="rounded-lg bg-(--color-accent) py-2 text-[13px] font-semibold text-(--color-accent-ink) disabled:opacity-40"
         >
-          {submitting ? "Salvando…" : "Criar projeto"}
+          {submitting ? "Salvando…" : "Salvar alterações"}
         </button>
       </form>
     </Dialog>
