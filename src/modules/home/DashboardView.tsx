@@ -3,7 +3,6 @@ import { TopBar } from "./components/TopBar";
 import { StatCards } from "./components/StatCards";
 import { ProjectsSection } from "./components/ProjectsSection";
 import { SpacesRow } from "./components/SpacesRow";
-import { StudyRoadmapCard } from "./components/StudyRoadmapCard";
 
 export function DashboardView() {
   const firstName = useFirstName();
@@ -15,7 +14,6 @@ export function DashboardView() {
         <StatCards />
         <ProjectsSection />
         <SpacesRow />
-        <StudyRoadmapCard />
       </div>
     </div>
   );
