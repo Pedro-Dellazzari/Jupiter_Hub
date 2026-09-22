@@ -152,10 +152,15 @@ export const tasksRepo = {
 
   /** Alterna o status da tarefa entre concluída e a fazer (usado pelo checkbox da lista). */
   async toggleDone(id: string, done: boolean): Promise<void> {
+    await this.setStatus(id, done ? "done" : "todo");
+  },
+
+  /** Move a tarefa para outra coluna do Board ("todo" / "in_progress" / "done"). */
+  async setStatus(id: string, status: string): Promise<void> {
     const db = await getDb();
     await db.execute("UPDATE tasks SET status = $1, completed_at = $2, updated_at = $3 WHERE id = $4", [
-      done ? "done" : "todo",
-      done ? now() : null,
+      status,
+      status === "done" ? now() : null,
       now(),
       id,
     ]);
