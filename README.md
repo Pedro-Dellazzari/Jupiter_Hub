@@ -44,6 +44,34 @@ soft-delete (`deleted_at`) para poderem viajar entre dispositivos.
 **Ao mudar uma tabela sincronizada**, atualize os três lugares: a migration do SQLite (`src-tauri/migrations`),
 o schema do Supabase (`supabase/migrations`) e a lista de colunas em `src/sync/tables.ts`.
 
+## Google Calendar (somente leitura)
+
+O módulo Calendário mostra os eventos da conta Google conectada. A conexão é por dispositivo: os tokens ficam
+em `app_settings` e os eventos num cache local (`external_events`) — nada disso passa pelo Supabase.
+
+1. No [Google Cloud Console](https://console.cloud.google.com/), crie um projeto e ative a **Google Calendar API**.
+2. Em Google Auth Platform, configure a tela de consentimento (tipo **Externo**), adicione o escopo
+   `.../auth/calendar.readonly` e inclua seu e-mail em **Usuários de teste**.
+3. Em Clientes, crie um cliente OAuth do tipo **App para computador** e copie o ID e a chave secreta para
+   `VITE_GOOGLE_CLIENT_ID` e `VITE_GOOGLE_CLIENT_SECRET` no `.env.local` (no release, secrets de mesmo nome
+   no Environment `prod-release`).
+
+Com o app OAuth em modo **Teste**, o Google expira a conexão a cada 7 dias (o Hub pede para conectar de novo);
+para não expirar, publique o app na tela de consentimento.
+
+Como funciona: o login abre no navegador do sistema (authorization code + PKCE) e volta por um redirect em
+`http://127.0.0.1:<porta>`, atendido por `src-tauri/src/oauth.rs`. Os eventos são buscados por intervalo
+visível (o mês da tela), com as recorrências já expandidas pelo Google.
+
+## Assinaturas iCal (Outlook e outros)
+
+Para calendários que não dá para conectar por login (ex.: Outlook corporativo), o diálogo **Calendários** aceita
+um link iCal (`.ics`). No Outlook: Configurações → Calendário → Calendários compartilhados → **Publicar um
+calendário** → copiar o link **ICS**. Quem tem o link lê a agenda, então ele fica só em `app_settings` deste
+dispositivo. O arquivo é baixado pelo Rust (`src-tauri/src/feed.rs`, porque esses servidores não mandam CORS) e
+lido com `ical.js`, que expande as recorrências; os eventos vão para o mesmo cache `external_events`.
+O Outlook regenera o arquivo publicado de tempos em tempos, então uma mudança pode demorar a aparecer.
+
 ## Estrutura
 
 - `src/app` — shell da aplicação (layout, navegação, onboarding)

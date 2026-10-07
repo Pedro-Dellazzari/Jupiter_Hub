@@ -1,3 +1,6 @@
+mod feed;
+mod oauth;
+
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 fn migrations() -> Vec<Migration> {
@@ -44,6 +47,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/007_milestones.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 8,
+            description: "external_events",
+            sql: include_str!("../migrations/008_external_events.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
@@ -58,6 +67,13 @@ pub fn run() {
                 .add_migrations("sqlite:hub.db", migrations())
                 .build(),
         )
+        .manage(oauth::OAuthLoopback::default())
+        .invoke_handler(tauri::generate_handler![
+            oauth::oauth_loopback_start,
+            oauth::oauth_loopback_wait,
+            oauth::oauth_loopback_cancel,
+            feed::fetch_calendar_feed,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

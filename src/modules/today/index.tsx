@@ -9,6 +9,9 @@ import { cn } from "../../shared/utils/cn";
 import { formatIsoDate, startOfDay } from "../../shared/utils/date";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { ListCard, ListRow } from "../../shared/ui/ListCard";
+import { useCalendarStore } from "../calendar/useCalendarStore";
+import { useExternalEvents } from "../calendar/useExternalEvents";
+import { eventTimeLabel, groupEventsByDay } from "../calendar/utils/events";
 import { DayStrip } from "./components/DayStrip";
 import { Panel, MiniEmpty } from "./components/Panel";
 
@@ -62,6 +65,20 @@ export default function Today() {
   const datesWithTasks = useMemo(
     () => new Set(allTasks.map((t) => t.due_date).filter((d): d is string => d !== null)),
     [allTasks],
+  );
+
+  // O mês do dia escolhido: navegar entre dias do mesmo mês não refaz a busca no Google.
+  const selectedYear = selected.getFullYear();
+  const selectedMonth = selected.getMonth();
+  const [monthStart, monthEnd] = useMemo(
+    () => [new Date(selectedYear, selectedMonth, 1), new Date(selectedYear, selectedMonth + 1, 1)],
+    [selectedYear, selectedMonth],
+  );
+  const monthEvents = useExternalEvents(monthStart, monthEnd);
+  const calendarConnected = useCalendarStore((s) => s.account !== null || s.feeds.length > 0);
+  const eventsToday = useMemo(
+    () => groupEventsByDay(monthEvents, monthStart, monthEnd).get(selectedIso) ?? [],
+    [monthEvents, monthStart, monthEnd, selectedIso],
   );
 
   const hasError = tasksState.state.status === "error" || habitsState.state.status === "error";
@@ -122,7 +139,32 @@ export default function Today() {
                 className="flex items-start gap-5"
               >
                 <Panel title="Agenda" className="flex-1">
-                  <MiniEmpty icon={LayoutGrid} label="Nada agendado — conecte seu calendário" />
+                  {eventsToday.length === 0 ? (
+                    <MiniEmpty
+                      icon={LayoutGrid}
+                      label={calendarConnected ? `Nada agendado para ${word}` : "Nada agendado — conecte seu calendário"}
+                    />
+                  ) : (
+                    <ListCard>
+                      {eventsToday.map((event) => (
+                        <ListRow
+                          key={event.id}
+                          leading={
+                            <span
+                              className="size-2 shrink-0 rounded-full"
+                              style={{ backgroundColor: event.color ?? "#4285f4" }}
+                            />
+                          }
+                          title={event.title}
+                          trailing={
+                            <span className="shrink-0 text-[12px] font-medium text-(--color-ink-muted)">
+                              {eventTimeLabel(event) || "Dia inteiro"}
+                            </span>
+                          }
+                        />
+                      ))}
+                    </ListCard>
+                  )}
                 </Panel>
 
                 <div className="flex flex-1 flex-col gap-4">

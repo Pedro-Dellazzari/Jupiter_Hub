@@ -1,10 +1,18 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CalendarPlus, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Card } from "../../shared/ui/Card";
-import { Dialog } from "../../shared/ui/Dialog";
 import { cn } from "../../shared/utils/cn";
+import { formatIsoDate } from "../../shared/utils/date";
+import { DayEventsDialog } from "./components/DayEventsDialog";
+import { CalendarSourcesDialog } from "./components/CalendarSourcesDialog";
+import { useCalendarStore } from "./useCalendarStore";
+import { useExternalEvents } from "./useExternalEvents";
+import { eventTimeLabel, groupEventsByDay } from "./utils/events";
 
 const WEEKDAY_HEADERS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+/** Linhas de evento que cabem numa célula; passando disso, a última vira "+N mais". */
+const MAX_EVENT_LINES = 3;
+const FALLBACK_EVENT_COLOR = "#4285f4";
 
 function monthLabel(date: Date) {
   const month = new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(date);
@@ -32,10 +40,27 @@ function buildWeeks(monthDate: Date) {
 
 export default function CalendarModule() {
   const [viewedMonth, setViewedMonth] = useState(() => new Date());
-  const [connectOpen, setConnectOpen] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const today = new Date();
 
-  const weeks = buildWeeks(viewedMonth);
+  const ready = useCalendarStore((s) => s.ready);
+  const sourceCount = useCalendarStore((s) => (s.account ? 1 : 0) + s.feeds.length);
+  const syncing = useCalendarStore((s) => s.syncing);
+  const syncRange = useCalendarStore((s) => s.syncRange);
+
+  const weeks = useMemo(() => buildWeeks(viewedMonth), [viewedMonth]);
+  // Intervalo da grade inteira (inclui os dias dos meses vizinhos), fim exclusivo.
+  const [gridStart, gridEnd] = useMemo(() => {
+    const end = new Date(weeks[weeks.length - 1][6]);
+    end.setDate(end.getDate() + 1);
+    return [weeks[0][0], end];
+  }, [weeks]);
+  const events = useExternalEvents(gridStart, gridEnd);
+  const eventsByDay = useMemo(() => groupEventsByDay(events, gridStart, gridEnd), [events, gridStart, gridEnd]);
+  const selectedEvents = selectedDay ? (eventsByDay.get(formatIsoDate(selectedDay)) ?? []) : [];
+
+  const syncNow = () => void syncRange(gridStart, gridEnd, { force: true });
 
   return (
     <div className="h-full overflow-y-auto px-10 py-8">
@@ -58,15 +83,30 @@ export default function CalendarModule() {
             </button>
           </div>
           <div className="flex-1" />
-          <button
-            onClick={() => setConnectOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink)"
-          >
-            <span className="flex size-3.5 items-center justify-center rounded-sm bg-(--color-accent-ink) text-[8px] font-semibold text-(--color-accent)">
-              G
-            </span>
-            Conectar Gmail ou Outlook
-          </button>
+          {sourceCount > 0 && (
+            <button
+              onClick={syncNow}
+              disabled={syncing}
+              title="Sincronizar agora"
+              className="text-(--color-ink-muted) hover:text-(--color-ink) disabled:hover:text-(--color-ink-muted)"
+            >
+              <RefreshCw className={cn("size-4", syncing && "animate-spin")} strokeWidth={2} />
+            </button>
+          )}
+          {ready && (
+            <button
+              onClick={() => setSourcesOpen(true)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold",
+                sourceCount > 0
+                  ? "bg-(--color-fill) text-(--color-ink)"
+                  : "bg-(--color-accent) text-(--color-accent-ink)",
+              )}
+            >
+              <CalendarPlus className="size-3.5" strokeWidth={2} />
+              {sourceCount > 0 ? `Calendários · ${sourceCount}` : "Conectar calendário"}
+            </button>
+          )}
         </div>
 
         <Card className="flex flex-col gap-1.5 p-4.5">
@@ -82,12 +122,17 @@ export default function CalendarModule() {
               {week.map((day) => {
                 const isCurrentMonth = day.getMonth() === viewedMonth.getMonth();
                 const isToday = day.toDateString() === today.toDateString();
+                const dayEvents = eventsByDay.get(formatIsoDate(day)) ?? [];
+                const shown =
+                  dayEvents.length > MAX_EVENT_LINES ? dayEvents.slice(0, MAX_EVENT_LINES - 1) : dayEvents;
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={day.toISOString()}
+                    onClick={() => setSelectedDay(day)}
                     className={cn(
-                      "h-[92px] flex-1 rounded-[10px] p-2",
-                      isToday && "bg-(--color-accent)/12",
+                      "flex h-[104px] min-w-0 flex-1 flex-col items-stretch gap-1 rounded-[10px] p-2 text-left transition-colors",
+                      isToday ? "bg-(--color-accent)/12" : "hover:bg-(--color-fill)",
                     )}
                   >
                     {isToday ? (
@@ -104,7 +149,35 @@ export default function CalendarModule() {
                         {day.getDate()}
                       </span>
                     )}
-                  </div>
+                    <div className={cn("flex min-w-0 flex-col gap-0.5", !isCurrentMonth && "opacity-50")}>
+                      {shown.map((event) => {
+                        const color = event.color ?? FALLBACK_EVENT_COLOR;
+                        return event.all_day ? (
+                          <span
+                            key={event.id}
+                            className="truncate rounded-[5px] px-1.5 text-[11px] leading-[17px] font-medium text-(--color-ink)"
+                            style={{ backgroundColor: `color-mix(in srgb, ${color} 24%, transparent)` }}
+                          >
+                            {event.title}
+                          </span>
+                        ) : (
+                          <span
+                            key={event.id}
+                            className="flex min-w-0 items-center gap-1 text-[11px] leading-[17px] text-(--color-ink)"
+                          >
+                            <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                            <span className="shrink-0 text-(--color-ink-muted)">{eventTimeLabel(event)}</span>
+                            <span className="truncate font-medium">{event.title}</span>
+                          </span>
+                        );
+                      })}
+                      {dayEvents.length > shown.length && (
+                        <span className="px-1.5 text-[11px] leading-[17px] font-medium text-(--color-ink-muted)">
+                          +{dayEvents.length - shown.length} mais
+                        </span>
+                      )}
+                    </div>
+                  </button>
                 );
               })}
             </div>
@@ -112,19 +185,12 @@ export default function CalendarModule() {
         </Card>
       </div>
 
-      <Dialog
-        open={connectOpen}
-        onOpenChange={setConnectOpen}
-        title="Conectar calendário"
-        description="Integração com Google Calendar e Outlook ainda não está disponível nesta versão do Hub."
-      >
-        <button
-          onClick={() => setConnectOpen(false)}
-          className="w-full rounded-lg bg-(--color-fill) py-2 text-[13px] font-semibold text-(--color-ink)"
-        >
-          Entendi
-        </button>
-      </Dialog>
+      <CalendarSourcesDialog open={sourcesOpen} onOpenChange={setSourcesOpen} onSync={syncNow} />
+      <DayEventsDialog
+        day={selectedDay}
+        events={selectedEvents}
+        onOpenChange={(open) => !open && setSelectedDay(null)}
+      />
     </div>
   );
 }
