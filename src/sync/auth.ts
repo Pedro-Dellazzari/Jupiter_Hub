@@ -13,6 +13,8 @@ export class AccountAuthError extends Error {
 
 export type CloudAccount = { name: string; email: string };
 
+export const MIN_PASSWORD_LENGTH = 6;
+
 function toAccountError(error: AuthError): AccountAuthError {
   switch (error.code) {
     case "email_exists":
@@ -22,6 +24,12 @@ function toAccountError(error: AuthError): AccountAuthError {
       return new AccountAuthError("E-mail ou senha incorretos.");
     case "weak_password":
       return new AccountAuthError("Senha muito fraca. Use pelo menos 6 caracteres.");
+    case "same_password":
+      return new AccountAuthError("A nova senha precisa ser diferente da anterior.");
+    case "otp_expired":
+    case "otp_disabled":
+    case "validation_failed":
+      return new AccountAuthError("Código inválido ou expirado. Confira o e-mail ou peça um novo código.");
     case "email_address_invalid":
       return new AccountAuthError("Esse e-mail não é válido.");
     case "signup_disabled":
@@ -77,6 +85,33 @@ export async function signUp(input: { name: string; email: string; password: str
 export async function signIn(input: { email: string; password: string }): Promise<CloudAccount> {
   const email = input.email.trim().toLowerCase();
   const { data, error } = await client().auth.signInWithPassword({ email, password: input.password });
+  if (error) throw toAccountError(error);
+  return { name: displayName(data.user, email), email };
+}
+
+/**
+ * Envia o e-mail de recuperação. O app é desktop e não tem para onde um link redirecionar, então a
+ * redefinição usa o código do e-mail: o template "Reset Password" do Supabase precisa mostrar `{{ .Token }}`.
+ * O Supabase não diz se o e-mail existe (de propósito), então isto só falha por rede ou limite de envio.
+ */
+export async function requestPasswordReset(emailInput: string): Promise<void> {
+  const { error } = await client().auth.resetPasswordForEmail(emailInput.trim().toLowerCase());
+  if (error) throw toAccountError(error);
+}
+
+/** Troca o código do e-mail por uma sessão e grava a nova senha; a pessoa já sai conectada. */
+export async function resetPassword(input: { email: string; code: string; password: string }): Promise<CloudAccount> {
+  const email = input.email.trim().toLowerCase();
+  const auth = client().auth;
+
+  // O código só vale uma vez: se ele já foi aceito e o que falhou foi gravar a senha, a sessão já existe.
+  const { data: current } = await auth.getSession();
+  if (current.session?.user.email?.toLowerCase() !== email) {
+    const { error } = await auth.verifyOtp({ email, token: input.code.trim(), type: "recovery" });
+    if (error) throw toAccountError(error);
+  }
+
+  const { data, error } = await auth.updateUser({ password: input.password });
   if (error) throw toAccountError(error);
   return { name: displayName(data.user, email), email };
 }

@@ -14,13 +14,17 @@ export function SyncIndicator({ className }: { className?: string }) {
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
   const error = useSyncStore((s) => s.error);
   const sync = useSyncStore((s) => s.sync);
+  const needsSignIn = useSyncStore((s) => s.needsSignIn);
+  const setSignInDialogOpen = useSyncStore((s) => s.setSignInDialogOpen);
 
   if (mode !== "cloud") return null;
 
   const label =
     status === "syncing"
       ? "Sincronizando…"
-      : status === "error"
+      : needsSignIn
+        ? "Sincronização parada: entre na sua conta novamente."
+        : status === "error"
         ? `${error} Clique para tentar agora.`
         : lastSyncedAt
           ? `Sincronizado às ${timeLabel(lastSyncedAt)}. Clique para sincronizar agora.`
@@ -30,7 +34,7 @@ export function SyncIndicator({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={() => void sync()}
+      onClick={() => (needsSignIn ? setSignInDialogOpen(true) : void sync())}
       disabled={status === "syncing"}
       aria-label={label}
       title={label}

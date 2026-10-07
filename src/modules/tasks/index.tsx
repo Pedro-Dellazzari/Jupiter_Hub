@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { DropdownMenu } from "radix-ui";
-import { AlertCircle, CalendarDays, CalendarOff, CheckSquare, ChevronDown, Clock, Flag, Plus, Sun } from "lucide-react";
+import { CheckSquare, ChevronDown, Flag, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { tasksRepo } from "../../db/repositories/tasksRepo";
 import { projectsRepo } from "../../db/repositories/projectsRepo";
@@ -13,17 +13,8 @@ import { cn } from "../../shared/utils/cn";
 import { CreateTaskDialog } from "./components/CreateTaskDialog";
 import { TaskBoard } from "./components/TaskBoard";
 import { TaskDetailPanel } from "./components/TaskDetailPanel";
-import { TaskRow } from "./components/TaskRow";
-import { groupTasksByDueDate, type TaskGroupKey } from "./utils/dateGroups";
-import { PRIORITY_OPTIONS, sortByPriority } from "./utils/priority";
-
-const GROUP_ICONS: Record<TaskGroupKey, typeof AlertCircle> = {
-  overdue: AlertCircle,
-  today: Sun,
-  week: CalendarDays,
-  later: Clock,
-  noDate: CalendarOff,
-};
+import { TaskGroupedList } from "./components/TaskGroupedList";
+import { PRIORITY_OPTIONS } from "./utils/priority";
 
 const FILTER_TRIGGER_CLASS =
   "flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-(--color-ink-muted) hover:bg-(--color-fill) hover:text-(--color-ink)";
@@ -53,7 +44,6 @@ export default function Tasks() {
   const filteredTasks = tasks.filter(
     (t) => (!spaceFilter || t.space_id === spaceFilter) && (!priorityFilter || t.priority === priorityFilter),
   );
-  const groups = groupTasksByDueDate(filteredTasks, today);
   const spaceFilterLabel = spaceFilter ? (spaces.find((s) => s.id === spaceFilter)?.name ?? "Espaço") : "Todos os Espaços";
   const priorityFilterLabel = priorityFilter
     ? (PRIORITY_OPTIONS.find((o) => o.value === priorityFilter)?.label ?? "Prioridade")
@@ -165,38 +155,14 @@ export default function Tasks() {
           />
         )}
         {tasksState.state.status === "ready" && filteredTasks.length > 0 && view === "list" && (
-          <div className="flex flex-col gap-1">
-            {groups.map((group) => {
-              const Icon = GROUP_ICONS[group.key];
-              return (
-                <div key={group.key} className="mb-2">
-                  <div
-                    className={cn(
-                      "mb-1 flex items-center gap-1.5 px-1 py-1.5 text-[12px] font-semibold",
-                      group.key === "overdue" ? "text-(--color-danger)" : "text-(--color-ink-muted)",
-                    )}
-                  >
-                    <Icon className="size-3" strokeWidth={2} />
-                    {group.label}
-                    <span className="font-normal text-(--color-ink-muted)/70">{group.tasks.length}</span>
-                  </div>
-                  <div className="flex flex-col divide-y divide-(--color-track)">
-                    {sortByPriority(group.tasks).map((task) => (
-                      <TaskRow
-                        key={task.id}
-                        task={task}
-                        today={today}
-                        selected={task.id === selectedTaskId}
-                        onSelect={setSelectedTaskId}
-                        onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
-                        onSubtasksChanged={tasksState.reload}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <TaskGroupedList
+            tasks={filteredTasks}
+            today={today}
+            selectedTaskId={selectedTaskId}
+            onSelect={setSelectedTaskId}
+            onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
+            onSubtasksChanged={tasksState.reload}
+          />
         )}
 
         {tasksState.state.status === "ready" && filteredTasks.length > 0 && view === "board" && (

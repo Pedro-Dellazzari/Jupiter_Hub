@@ -87,17 +87,21 @@ function CreateSpaceDialog({
 export default function Spaces() {
   const { state, reload } = useRepoList(spacesRepo.listWithStats);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedSpace, setSelectedSpace] = useState<SpaceWithStats | null>(null);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+  // Deriva do estado carregado para que as contagens (ex: no diálogo de exclusão) reflitam o que foi criado na página.
+  const selectedSpace: SpaceWithStats | null =
+    state.status === "ready" ? (state.items.find((s) => s.id === selectedSpaceId) ?? null) : null;
 
   if (selectedSpace) {
     return (
       <SpaceDetailView
         space={selectedSpace}
-        onBack={() => setSelectedSpace(null)}
+        onBack={() => setSelectedSpaceId(null)}
         onDeleted={() => {
-          setSelectedSpace(null);
+          setSelectedSpaceId(null);
           reload();
         }}
+        onChanged={reload}
       />
     );
   }
@@ -133,7 +137,7 @@ export default function Spaces() {
           {state.items.map((space, index) => (
             <Card
               key={space.id}
-              onClick={() => setSelectedSpace(space)}
+              onClick={() => setSelectedSpaceId(space.id)}
               className="flex cursor-pointer flex-col gap-3 p-5 text-left transition-transform hover:scale-[1.01]"
             >
               <div className="flex items-center gap-3">

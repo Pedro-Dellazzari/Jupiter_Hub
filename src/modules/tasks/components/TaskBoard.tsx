@@ -27,6 +27,7 @@ export function TaskBoard({
   onSelect,
   onToggleDone,
   onChanged,
+  hideSpace,
 }: {
   tasks: TaskWithRelations[];
   today: Date;
@@ -35,6 +36,8 @@ export function TaskBoard({
   onToggleDone: (id: string, done: boolean) => void;
   /** Avisa a tela de Tarefas para recarregar a lista após mover uma tarefa de coluna. */
   onChanged: () => void;
+  /** Esconde o chip de Espaço dos cards (ex: dentro da página de um Espaço). */
+  hideSpace?: boolean;
 }) {
   const [dragOverColumn, setDragOverColumn] = useState<BoardStatus | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -85,6 +88,7 @@ export function TaskBoard({
                   today={today}
                   selected={task.id === selectedTaskId}
                   dragging={task.id === draggingId}
+                  hideSpace={hideSpace}
                   onSelect={onSelect}
                   onToggleDone={onToggleDone}
                   onDragStart={(e) => {

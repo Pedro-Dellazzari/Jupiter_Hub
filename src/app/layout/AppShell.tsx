@@ -8,6 +8,7 @@ import { springs } from "../../shared/motion/springs";
 import { startAutoSync } from "../../sync/useSyncStore";
 import { startAutoUpdateCheck } from "../store/useUpdateStore";
 import { UpdateDialog } from "../../shared/ui/UpdateDialog";
+import { SignInDialog } from "./SignInDialog";
 
 export function AppShell() {
   const activeModuleId = useNavigationStore((s) => s.activeModuleId);
@@ -20,6 +21,7 @@ export function AppShell() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-(--color-surface)" data-tauri-drag-region>
       <UpdateDialog />
+      <SignInDialog />
       <Sidebar />
       {/* Sem padding aqui: cada módulo define seu próprio chrome de página
           (ex: Home rola com padding, Cadernos é um workspace de 3 colunas). */}

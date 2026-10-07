@@ -16,11 +16,14 @@ export function CreateProjectDialog({
   open,
   onOpenChange,
   spaces,
+  defaultSpaceId,
   onCreate,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   spaces: Space[];
+  /** Espaço pré-selecionado (ex: o botão "Novo projeto" dentro da página de um Espaço). */
+  defaultSpaceId?: string | null;
   onCreate: (input: {
     name: string;
     spaceId: string | null;
@@ -31,7 +34,7 @@ export function CreateProjectDialog({
   }) => Promise<void>;
 }) {
   const [name, setName] = useState("");
-  const [spaceId, setSpaceId] = useState("");
+  const [spaceId, setSpaceId] = useState(defaultSpaceId ?? "");
   const [status, setStatus] = useState<string>("planning");
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
   const [description, setDescription] = useState("");
@@ -56,7 +59,7 @@ export function CreateProjectDialog({
         dueDate: dueDate || null,
       });
       setName("");
-      setSpaceId("");
+      setSpaceId(defaultSpaceId ?? "");
       setStatus("planning");
       setColor(COLOR_OPTIONS[0]);
       setDescription("");

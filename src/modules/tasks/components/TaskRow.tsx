@@ -4,13 +4,16 @@ import { motion } from "motion/react";
 import { tasksRepo, type Task, type TaskWithRelations } from "../../../db/repositories/tasksRepo";
 import { formatDueLabel } from "../utils/dateGroups";
 import { priorityChipBackground, priorityStyle } from "../utils/priority";
+import { useTimerStore } from "../../../app/store/useTimerStore";
 import { springs } from "../../../shared/motion/springs";
 import { cn } from "../../../shared/utils/cn";
+import { TaskTimerControl } from "./TaskTimerControl";
 
 export function TaskRow({
   task,
   today,
   selected,
+  hideSpace,
   onSelect,
   onToggleDone,
   onSubtasksChanged,
@@ -18,6 +21,8 @@ export function TaskRow({
   task: TaskWithRelations;
   today: Date;
   selected: boolean;
+  /** Esconde o chip de Espaço (ex: dentro da página de um Espaço). */
+  hideSpace?: boolean;
   onSelect: (id: string) => void;
   onToggleDone: (id: string, done: boolean) => void;
   /** Avisa a tela de Tarefas para recarregar a lista (contagem do chip) após mudar uma subtarefa aqui. */
@@ -28,6 +33,8 @@ export function TaskRow({
   const priority = priorityStyle(task.priority);
   const showPriority = task.priority !== "none" && !isDone;
   const hasSubtasks = task.subtask_total > 0;
+
+  const isTiming = useTimerStore((s) => s.running?.taskId === task.id);
 
   const [expanded, setExpanded] = useState(false);
   const [subtasks, setSubtasks] = useState<Task[] | null>(null);
@@ -64,7 +71,7 @@ export function TaskRow({
         }}
         className={cn(
           "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent)/50",
-          selected ? "bg-(--color-accent)/8" : "hover:bg-(--color-fill)",
+          selected || isTiming ? "bg-(--color-accent)/8" : "hover:bg-(--color-fill)",
         )}
       >
       <motion.button
@@ -121,7 +128,7 @@ export function TaskRow({
             {task.subtask_done}/{task.subtask_total}
           </button>
         )}
-        {task.space_name && (
+        {!hideSpace && task.space_name && (
           <span className="flex items-center gap-1 rounded-md bg-(--color-fill) px-1.5 py-0.5 text-[11px] text-(--color-ink-muted)">
             <Circle className="size-2" strokeWidth={2.5} />
             {task.space_name}
@@ -149,6 +156,7 @@ export function TaskRow({
             {due.text}
           </span>
         )}
+        <TaskTimerControl task={task} canStart={!isDone} />
         </div>
       </div>
 

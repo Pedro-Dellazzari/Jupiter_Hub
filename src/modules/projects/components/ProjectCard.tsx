@@ -14,9 +14,19 @@ function formatDueChip(dueIso: string | null): string | null {
 }
 
 /** Card de um projeto na visão em grade da tela de Projetos. */
-export function ProjectCard({ project, onClick }: { project: ProjectWithStats; onClick: () => void }) {
+export function ProjectCard({
+  project,
+  onClick,
+  hideSpace,
+}: {
+  project: ProjectWithStats;
+  onClick: () => void;
+  /** Esconde o chip de Espaço (ex: dentro da página de um Espaço). */
+  hideSpace?: boolean;
+}) {
   const statusInfo = projectStatusInfo(project.status);
   const dueChip = formatDueChip(project.due_date);
+  const spaceName = hideSpace ? null : project.spaceName;
 
   return (
     <Card
@@ -39,12 +49,12 @@ export function ProjectCard({ project, onClick }: { project: ProjectWithStats; o
 
       {project.description && <p className="line-clamp-1 text-[13px] text-(--color-ink-muted)">{project.description}</p>}
 
-      {(project.spaceName || dueChip) && (
+      {(spaceName || dueChip) && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {project.spaceName && (
+          {spaceName && (
             <span className="flex items-center gap-1 rounded-md bg-(--color-fill) px-2 py-1 text-[12px] text-(--color-ink-muted)">
               <Circle className="size-2.5" strokeWidth={2.5} />
-              {project.spaceName}
+              {spaceName}
             </span>
           )}
           {dueChip && (

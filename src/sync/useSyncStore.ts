@@ -16,6 +16,15 @@ type SyncState = {
   error: string | null;
   /** Sobe quando o pull mudou dados locais; as listas (useRepoList) recarregam com isso. */
   dataVersion: number;
+  /**
+   * Modo nuvem sem sessão do Supabase neste WebView (a sessão expirou, ou o banco local veio de outra
+   * instalação/origem do app). Nada sincroniza até a pessoa entrar de novo.
+   */
+  needsSignIn: boolean;
+  signInDialogOpen: boolean;
+  setSignInDialogOpen: (open: boolean) => void;
+  /** Chamado depois de um login bem-sucedido: libera o sync e roda uma rodada. */
+  signedIn: () => void;
   sync: () => Promise<void>;
 };
 
@@ -38,26 +47,42 @@ function getEngine() {
   return engine;
 }
 
+function errorMessage(err: unknown) {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function isOffline(err: unknown) {
+  return !navigator.onLine || /failed to fetch|networkerror|load failed/i.test(errorMessage(err));
+}
+
+function isAuthError(err: unknown) {
+  return !isOffline(err) && /jwt|not authenticated|invalid claim/i.test(errorMessage(err));
+}
+
 function describeError(err: unknown) {
   if (err instanceof SyncAccountMismatchError) return err.message;
-  const message = err instanceof Error ? err.message : String(err);
-  if (!navigator.onLine || /failed to fetch|networkerror|load failed/i.test(message)) {
-    return "Sem conexão. Tentaremos de novo em instantes.";
-  }
-  if (/jwt|not authenticated|invalid claim/i.test(message)) {
-    return "Sua sessão expirou. Entre novamente.";
-  }
+  if (isOffline(err)) return "Sem conexão. Tentaremos de novo em instantes.";
+  if (isAuthError(err)) return "Sua sessão expirou. Entre novamente.";
   console.error("Falha no sync:", err);
   return "Não foi possível sincronizar. Tentaremos de novo em instantes.";
 }
 
 let running: Promise<void> | null = null;
 
-export const useSyncStore = create<SyncState>((set) => ({
+export const useSyncStore = create<SyncState>((set, get) => ({
   status: "idle",
   lastSyncedAt: null,
   error: null,
   dataVersion: 0,
+  needsSignIn: false,
+  signInDialogOpen: false,
+
+  setSignInDialogOpen: (open) => set({ signInDialogOpen: open }),
+
+  signedIn: () => {
+    set({ needsSignIn: false, signInDialogOpen: false });
+    void get().sync();
+  },
 
   // Uma rodada por vez: gatilhos que chegam durante um sync reaproveitam a rodada em andamento.
   sync: () => {
@@ -72,11 +97,19 @@ export const useSyncStore = create<SyncState>((set) => ({
         const result = await activeEngine.sync(data.session.user.id);
         set((s) => ({
           status: "idle",
+          needsSignIn: false,
           lastSyncedAt: Date.now(),
           dataVersion: result.pulled > 0 ? s.dataVersion + 1 : s.dataVersion,
         }));
       } catch (err) {
-        set({ status: "error", error: describeError(err) });
+        const needsSignIn = isAuthError(err);
+        // O diálogo abre sozinho só na primeira falha; depois de dispensado, reabre pelo indicador de sync.
+        set((s) => ({
+          status: "error",
+          error: describeError(err),
+          needsSignIn,
+          signInDialogOpen: s.signInDialogOpen || (needsSignIn && !s.needsSignIn),
+        }));
       }
     })().finally(() => {
       running = null;

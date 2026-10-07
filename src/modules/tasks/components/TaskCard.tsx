@@ -4,8 +4,10 @@ import { motion } from "motion/react";
 import type { TaskWithRelations } from "../../../db/repositories/tasksRepo";
 import { formatDueLabel } from "../utils/dateGroups";
 import { priorityChipBackground, priorityStyle } from "../utils/priority";
+import { useTimerStore } from "../../../app/store/useTimerStore";
 import { springs } from "../../../shared/motion/springs";
 import { cn } from "../../../shared/utils/cn";
+import { TaskTimerControl } from "./TaskTimerControl";
 
 /** Card compacto de uma tarefa numa coluna do Board — arrastável entre colunas. */
 export function TaskCard({
@@ -13,6 +15,7 @@ export function TaskCard({
   today,
   selected,
   dragging,
+  hideSpace,
   onSelect,
   onToggleDone,
   onDragStart,
@@ -22,6 +25,8 @@ export function TaskCard({
   today: Date;
   selected: boolean;
   dragging: boolean;
+  /** Esconde o chip de Espaço (ex: dentro da página de um Espaço). */
+  hideSpace?: boolean;
   onSelect: (id: string) => void;
   onToggleDone: (id: string, done: boolean) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>) => void;
@@ -31,6 +36,7 @@ export function TaskCard({
   const due = formatDueLabel(task.due_date, today);
   const priority = priorityStyle(task.priority);
   const showPriority = task.priority !== "none" && !isDone;
+  const isTiming = useTimerStore((s) => s.running?.taskId === task.id);
 
   return (
     <div
@@ -49,6 +55,7 @@ export function TaskCard({
       className={cn(
         "flex cursor-grab flex-col gap-2 rounded-xl bg-(--color-surface-elevated) p-3 text-left shadow-[0px_1px_6px_0px_rgba(0,0,0,0.05)] outline-none active:cursor-grabbing focus-visible:ring-1 focus-visible:ring-(--color-accent)/50",
         selected && "ring-1 ring-(--color-accent)/50",
+        isTiming && "ring-[1.5px] ring-(--color-accent)",
         dragging && "opacity-40",
       )}
     >
@@ -98,7 +105,7 @@ export function TaskCard({
             {task.subtask_done}/{task.subtask_total}
           </span>
         )}
-        {task.space_name && (
+        {!hideSpace && task.space_name && (
           <span className="flex items-center gap-1 rounded-md bg-(--color-fill) px-1.5 py-0.5 text-[11px] text-(--color-ink-muted)">
             <Circle className="size-2" strokeWidth={2.5} />
             {task.space_name}
@@ -126,6 +133,9 @@ export function TaskCard({
             {due.text}
           </span>
         )}
+        <div className="ml-auto">
+          <TaskTimerControl task={task} canStart={!isDone} />
+        </div>
       </div>
     </div>
   );

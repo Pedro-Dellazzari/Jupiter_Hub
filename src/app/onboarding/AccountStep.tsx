@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Info } from "lucide-react";
-import { AccountAuthError, signIn, signUp } from "../../sync/auth";
+import { AccountAuthError, MIN_PASSWORD_LENGTH, signIn, signUp } from "../../sync/auth";
 import { useAccountStore, type AccountMode } from "../store/useAccountStore";
+import { PasswordResetForm } from "./PasswordResetForm";
 import { BackButton, Field, PasswordField, PrimaryButton, StepHeader } from "./parts";
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
-const MIN_PASSWORD_LENGTH = 6;
 
 export function AccountStep({ mode, onBack }: { mode: AccountMode; onBack: () => void }) {
   return mode === "local" ? <LocalForm onBack={onBack} /> : <CloudForm onBack={onBack} />;
@@ -62,6 +62,7 @@ function CloudForm({ onBack }: { onBack: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const isSignup = flow === "signup";
@@ -102,6 +103,16 @@ function CloudForm({ onBack }: { onBack: () => void }) {
       }
       setSubmitting(false);
     }
+  }
+
+  if (resetting) {
+    return (
+      <div className="flex flex-col gap-6">
+        <BackButton onClick={() => setResetting(false)} />
+        <StepHeader title="Redefinir senha" />
+        <PasswordResetForm initialEmail={email} onDone={(account) => complete("cloud", account.name)} />
+      </div>
+    );
   }
 
   return (
@@ -168,6 +179,15 @@ function CloudForm({ onBack }: { onBack: () => void }) {
         >
           {isSignup ? "Já tenho conta" : "Criar uma conta"}
         </button>
+        {!isSignup && (
+          <button
+            type="button"
+            onClick={() => setResetting(true)}
+            className="text-[13px] text-(--color-ink-muted) hover:text-(--color-ink)"
+          >
+            Esqueci minha senha
+          </button>
+        )}
       </div>
     </form>
   );

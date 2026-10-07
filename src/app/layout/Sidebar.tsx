@@ -5,6 +5,7 @@ import { useAccountStore } from "../store/useAccountStore";
 import { useNavigationStore } from "../store/useNavigationStore";
 import { Glass } from "../../shared/ui/Glass";
 import { LogoMark } from "../../shared/ui/Logo";
+import { MiniTimer } from "./MiniTimer";
 import { SyncIndicator } from "./SyncIndicator";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "../../shared/utils/cn";
@@ -82,6 +83,8 @@ export function Sidebar() {
           <span className="text-[13px] font-medium">Adicionar módulo</span>
         </button>
       </nav>
+
+      <MiniTimer />
 
       <div className="flex shrink-0 items-center gap-2 px-1.5 py-2.5">
         <div className="size-7 shrink-0 rounded-full bg-[#339966]" />
