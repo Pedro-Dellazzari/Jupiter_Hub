@@ -7,7 +7,9 @@ import { spacesRepo, type Space } from "../../../db/repositories/spacesRepo";
 import { tasksRepo, type TaskWithRelations } from "../../../db/repositories/tasksRepo";
 import { springs } from "../../../shared/motion/springs";
 import { cn } from "../../../shared/utils/cn";
+import { CompletedTaskList } from "../../tasks/components/CompletedTaskList";
 import { CreateTaskDialog } from "../../tasks/components/CreateTaskDialog";
+import { StatusFilterChips, type TaskStatusFilter } from "../../tasks/components/StatusFilterChips";
 import { TaskBoard } from "../../tasks/components/TaskBoard";
 import { TaskGroupedList } from "../../tasks/components/TaskGroupedList";
 import { PRIORITY_OPTIONS } from "../../tasks/utils/priority";
@@ -47,6 +49,7 @@ export function SpaceTasksTab({
   onSpacesChanged: () => void;
 }) {
   const [view, setView] = useState<"list" | "board">("list");
+  const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -60,17 +63,7 @@ export function SpaceTasksTab({
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => setPriorityFilter(null)}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-[12px]",
-              priorityFilter
-                ? "font-medium text-(--color-ink-muted) hover:bg-(--color-fill) hover:text-(--color-ink)"
-                : "bg-(--color-accent)/12 font-semibold text-(--color-accent-text)",
-            )}
-          >
-            Todas
-          </button>
+          <StatusFilterChips value={statusFilter} onChange={setStatusFilter} />
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button className={cn(FILTER_TRIGGER_CLASS, priorityFilter && "text-(--color-ink)")}>
@@ -99,7 +92,13 @@ export function SpaceTasksTab({
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5">
+          {/* O histórico de concluídas é sempre uma lista, então o seletor Lista/Board some nele. */}
+          <div
+            className={cn(
+              "flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5",
+              statusFilter === "done" && "hidden",
+            )}
+          >
             {(["list", "board"] as const).map((mode) => (
               <button
                 key={mode}
@@ -140,6 +139,8 @@ export function SpaceTasksTab({
             priority,
             due_date: dueDate,
           });
+          // A tarefa nova está aberta: no histórico ela não apareceria.
+          if (statusFilter === "done") setStatusFilter("all");
           onChanged();
         }}
       />
@@ -148,6 +149,16 @@ export function SpaceTasksTab({
         <p className="py-8 text-center text-[13px] text-(--color-ink-muted)">
           {tasks.length === 0 ? "Nenhuma tarefa neste Espaço ainda — crie a primeira acima." : "Nenhuma tarefa com essa prioridade."}
         </p>
+      ) : statusFilter === "done" ? (
+        <CompletedTaskList
+          tasks={filteredTasks}
+          today={today}
+          selectedTaskId={selectedTaskId}
+          onSelect={onSelect}
+          onToggleDone={toggleDone}
+          onSubtasksChanged={onChanged}
+          hideSpace
+        />
       ) : view === "list" ? (
         <TaskGroupedList
           tasks={filteredTasks}
@@ -156,6 +167,8 @@ export function SpaceTasksTab({
           onSelect={onSelect}
           onToggleDone={toggleDone}
           onSubtasksChanged={onChanged}
+          completedGroup={statusFilter === "all"}
+          onShowAllCompleted={() => setStatusFilter("done")}
           hideSpace
         />
       ) : (
@@ -166,6 +179,8 @@ export function SpaceTasksTab({
           onSelect={onSelect}
           onToggleDone={toggleDone}
           onChanged={onChanged}
+          hideDoneColumn={statusFilter === "open"}
+          onShowAllCompleted={() => setStatusFilter("done")}
           hideSpace
         />
       )}
@@ -183,6 +198,7 @@ export function SpaceTasksTab({
         }}
         onCreate={async ({ title, projectId, spaceId, priority, dueDate }) => {
           await tasksRepo.create({ title, project_id: projectId, space_id: spaceId, priority, due_date: dueDate });
+          if (statusFilter === "done") setStatusFilter("all");
           onChanged();
         }}
       />

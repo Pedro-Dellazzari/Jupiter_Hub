@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, Circle, CircleDot } from "lucide-react";
 import { tasksRepo, type TaskWithRelations } from "../../../db/repositories/tasksRepo";
+import { isRecentlyDone, RECENT_DONE_DAYS, sortByCompletion } from "../utils/dateGroups";
 import { sortByPriority } from "../utils/priority";
 import { cn } from "../../../shared/utils/cn";
 import { TaskCard } from "./TaskCard";
@@ -19,7 +20,10 @@ function columnOf(task: TaskWithRelations): BoardStatus {
   return "todo";
 }
 
-/** Board Kanban da tela de Tarefas: colunas A Fazer / Em Andamento / Concluído, com arrastar-e-soltar entre elas. */
+/**
+ * Board Kanban da tela de Tarefas: colunas A Fazer / Em Andamento / Concluído, com arrastar-e-soltar entre elas.
+ * A coluna Concluído mostra só as concluídas recentes; as mais antigas ficam no histórico (filtro "Concluídas").
+ */
 export function TaskBoard({
   tasks,
   today,
@@ -27,6 +31,8 @@ export function TaskBoard({
   onSelect,
   onToggleDone,
   onChanged,
+  hideDoneColumn,
+  onShowAllCompleted,
   hideSpace,
 }: {
   tasks: TaskWithRelations[];
@@ -36,6 +42,10 @@ export function TaskBoard({
   onToggleDone: (id: string, done: boolean) => void;
   /** Avisa a tela de Tarefas para recarregar a lista após mover uma tarefa de coluna. */
   onChanged: () => void;
+  /** Esconde a coluna Concluído (filtro "Abertas"). */
+  hideDoneColumn: boolean;
+  /** Abre o histórico completo (filtro "Concluídas") a partir do link de concluídas mais antigas. */
+  onShowAllCompleted: () => void;
   /** Esconde o chip de Espaço dos cards (ex: dentro da página de um Espaço). */
   hideSpace?: boolean;
 }) {
@@ -47,10 +57,16 @@ export function TaskBoard({
     tasksRepo.setStatus(id, status).then(onChanged);
   }
 
+  const doneTasks = tasks.filter((t) => columnOf(t) === "done");
+  const recentDone = sortByCompletion(doneTasks.filter((t) => isRecentlyDone(t, today)));
+  const olderDoneCount = doneTasks.length - recentDone.length;
+  const columns = hideDoneColumn ? COLUMNS.filter((c) => c.key !== "done") : COLUMNS;
+
   return (
     <div className="flex items-start gap-4">
-      {COLUMNS.map((column) => {
-        const columnTasks = sortByPriority(tasks.filter((t) => columnOf(t) === column.key));
+      {columns.map((column) => {
+        const columnTasks =
+          column.key === "done" ? recentDone : sortByPriority(tasks.filter((t) => columnOf(t) === column.key));
         const Icon = column.icon;
         return (
           <div
@@ -101,8 +117,18 @@ export function TaskBoard({
               ))}
               {columnTasks.length === 0 && (
                 <div className="rounded-xl border border-dashed border-(--color-divider) px-3 py-6 text-center text-[12px] text-(--color-ink-muted)">
-                  Sem tarefas
+                  {column.key === "done" && olderDoneCount > 0
+                    ? `Nada concluído nos últimos ${RECENT_DONE_DAYS} dias`
+                    : "Sem tarefas"}
                 </div>
+              )}
+              {column.key === "done" && olderDoneCount > 0 && (
+                <button
+                  onClick={onShowAllCompleted}
+                  className="rounded-lg px-2 py-1.5 text-left text-[12px] font-medium text-(--color-accent-text) hover:underline"
+                >
+                  Ver {olderDoneCount === 1 ? "1 mais antiga" : `${olderDoneCount} mais antigas`}
+                </button>
               )}
             </div>
           </div>

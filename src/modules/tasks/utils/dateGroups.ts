@@ -1,7 +1,30 @@
-import type { TaskWithRelations } from "../../../db/repositories/tasksRepo";
+import type { Task, TaskWithRelations } from "../../../db/repositories/tasksRepo";
 import { parseIsoDate, startOfDay } from "../../../shared/utils/date";
 
 const WEEKDAY_ABBR = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+/** Janela das concluídas "recentes" (contando hoje): só elas aparecem no grupo Concluídas da lista e na coluna do Board. */
+export const RECENT_DONE_DAYS = 7;
+
+/** Momento da conclusão — `updated_at` cobre registros sem `completed_at` (ex: vindos do sync). */
+export function completedAt(task: Task): string {
+  return task.completed_at ?? task.updated_at;
+}
+
+function recentDoneCutoff(today: Date): Date {
+  const cutoff = startOfDay(today);
+  cutoff.setDate(cutoff.getDate() - (RECENT_DONE_DAYS - 1));
+  return cutoff;
+}
+
+export function isRecentlyDone(task: Task, today: Date): boolean {
+  return new Date(completedAt(task)) >= recentDoneCutoff(today);
+}
+
+/** Mais recentemente concluída primeiro. */
+export function sortByCompletion<T extends Task>(tasks: T[]): T[] {
+  return [...tasks].sort((a, b) => completedAt(b).localeCompare(completedAt(a)));
+}
 
 function endOfWeek(date: Date): Date {
   const end = startOfDay(date);
@@ -55,6 +78,61 @@ export function groupTasksByDueDate(tasks: TaskWithRelations[], today: Date): Ta
     { key: "noDate", label: "Sem data", tasks: buckets.noDate },
   ];
   return groups.filter((g) => g.tasks.length > 0);
+}
+
+export type CompletedGroup = {
+  key: string;
+  label: string;
+  tasks: TaskWithRelations[];
+};
+
+function monthLabel(date: Date, today: Date): string {
+  const label = new Intl.DateTimeFormat("pt-BR", {
+    month: "long",
+    year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+  }).format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Agrupa tarefas concluídas pela data de conclusão (Hoje/Ontem/Últimos 7 dias/um grupo por mês) para o histórico. */
+export function groupTasksByCompletion(tasks: TaskWithRelations[], today: Date): CompletedGroup[] {
+  const todayStart = startOfDay(today);
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  const recentStart = recentDoneCutoff(today);
+
+  const groups: CompletedGroup[] = [];
+  for (const task of sortByCompletion(tasks)) {
+    const at = new Date(completedAt(task));
+    const [key, label] =
+      at >= todayStart
+        ? ["today", "Hoje"]
+        : at >= yesterdayStart
+          ? ["yesterday", "Ontem"]
+          : at >= recentStart
+            ? ["recent", `Últimos ${RECENT_DONE_DAYS} dias`]
+            : [`${at.getFullYear()}-${at.getMonth()}`, monthLabel(at, today)];
+    // A lista já vem ordenada, então cada grupo é um trecho contíguo.
+    const last = groups[groups.length - 1];
+    if (last?.key === key) last.tasks.push(task);
+    else groups.push({ key, label, tasks: [task] });
+  }
+  return groups;
+}
+
+/** Rótulo curto da data de conclusão (Hoje/Ontem/dia da semana/data curta) para as linhas de tarefas concluídas. */
+export function formatCompletedLabel(iso: string, today: Date): string {
+  const done = startOfDay(new Date(iso));
+  const diffDays = Math.round((startOfDay(today).getTime() - done.getTime()) / 86_400_000);
+
+  if (diffDays <= 0) return "Hoje";
+  if (diffDays === 1) return "Ontem";
+  if (diffDays < RECENT_DONE_DAYS) return WEEKDAY_ABBR[done.getDay()];
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: done.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+  }).format(done);
 }
 
 /** Formata a data de entrega para o rótulo da linha da tarefa (Hoje/Ontem/dia da semana/data curta). */

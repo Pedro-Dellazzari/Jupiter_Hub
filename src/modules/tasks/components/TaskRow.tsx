@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, ChevronRight, Circle, Flag, ListChecks, Square } from "lucide-react";
 import { motion } from "motion/react";
 import { tasksRepo, type Task, type TaskWithRelations } from "../../../db/repositories/tasksRepo";
-import { formatDueLabel } from "../utils/dateGroups";
+import { completedAt, formatCompletedLabel, formatDueLabel } from "../utils/dateGroups";
 import { priorityChipBackground, priorityStyle } from "../utils/priority";
 import { useTimerStore } from "../../../app/store/useTimerStore";
 import { springs } from "../../../shared/motion/springs";
@@ -14,6 +14,7 @@ export function TaskRow({
   today,
   selected,
   hideSpace,
+  showCompletedDate,
   onSelect,
   onToggleDone,
   onSubtasksChanged,
@@ -23,13 +24,15 @@ export function TaskRow({
   selected: boolean;
   /** Esconde o chip de Espaço (ex: dentro da página de um Espaço). */
   hideSpace?: boolean;
+  /** Mostra quando a tarefa foi concluída no lugar do prazo (grupo Concluídas e histórico). */
+  showCompletedDate?: boolean;
   onSelect: (id: string) => void;
   onToggleDone: (id: string, done: boolean) => void;
   /** Avisa a tela de Tarefas para recarregar a lista (contagem do chip) após mudar uma subtarefa aqui. */
   onSubtasksChanged: () => void;
 }) {
   const isDone = task.status === "done";
-  const due = formatDueLabel(task.due_date, today);
+  const due = showCompletedDate ? null : formatDueLabel(task.due_date, today);
   const priority = priorityStyle(task.priority);
   const showPriority = task.priority !== "none" && !isDone;
   const hasSubtasks = task.subtask_total > 0;
@@ -154,6 +157,15 @@ export function TaskRow({
             )}
           >
             {due.text}
+          </span>
+        )}
+        {showCompletedDate && (
+          <span
+            className="flex min-w-[30px] items-center justify-end gap-0.5 text-[11px] font-medium text-(--color-ink-muted)"
+            title="Concluída"
+          >
+            <Check className="size-2.5" strokeWidth={2.5} />
+            {formatCompletedLabel(completedAt(task), today)}
           </span>
         )}
         <TaskTimerControl task={task} canStart={!isDone} />

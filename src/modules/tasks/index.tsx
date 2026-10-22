@@ -10,7 +10,9 @@ import { EmptyState } from "../../shared/ui/EmptyState";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { springs } from "../../shared/motion/springs";
 import { cn } from "../../shared/utils/cn";
+import { CompletedTaskList } from "./components/CompletedTaskList";
 import { CreateTaskDialog } from "./components/CreateTaskDialog";
+import { StatusFilterChips, type TaskStatusFilter } from "./components/StatusFilterChips";
 import { TaskBoard } from "./components/TaskBoard";
 import { TaskDetailPanel } from "./components/TaskDetailPanel";
 import { TaskGroupedList } from "./components/TaskGroupedList";
@@ -31,6 +33,7 @@ export default function Tasks() {
   const spacesState = useRepoList(spacesRepo.list);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [view, setView] = useState<"list" | "board">("list");
+  const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [spaceFilter, setSpaceFilter] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -56,7 +59,13 @@ export default function Tasks() {
         <div className="mb-5 flex items-center justify-between">
           <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">Tarefas</h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5">
+            {/* O histórico de concluídas é sempre uma lista, então o seletor Lista/Board some nele. */}
+            <div
+              className={cn(
+                "flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5",
+                statusFilter === "done" && "hidden",
+              )}
+            >
               <button
                 onClick={() => setView("list")}
                 className={cn(
@@ -93,9 +102,7 @@ export default function Tasks() {
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          <span className="rounded-lg bg-(--color-accent)/12 px-3 py-1.5 text-[12px] font-semibold text-(--color-accent-text)">
-            Todas
-          </span>
+          <StatusFilterChips value={statusFilter} onChange={setStatusFilter} />
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button className={FILTER_TRIGGER_CLASS}>
@@ -154,8 +161,8 @@ export default function Tasks() {
             onAction={() => setDialogOpen(true)}
           />
         )}
-        {tasksState.state.status === "ready" && filteredTasks.length > 0 && view === "list" && (
-          <TaskGroupedList
+        {tasksState.state.status === "ready" && filteredTasks.length > 0 && statusFilter === "done" && (
+          <CompletedTaskList
             tasks={filteredTasks}
             today={today}
             selectedTaskId={selectedTaskId}
@@ -165,7 +172,20 @@ export default function Tasks() {
           />
         )}
 
-        {tasksState.state.status === "ready" && filteredTasks.length > 0 && view === "board" && (
+        {tasksState.state.status === "ready" && filteredTasks.length > 0 && statusFilter !== "done" && view === "list" && (
+          <TaskGroupedList
+            tasks={filteredTasks}
+            today={today}
+            selectedTaskId={selectedTaskId}
+            onSelect={setSelectedTaskId}
+            onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
+            onSubtasksChanged={tasksState.reload}
+            completedGroup={statusFilter === "all"}
+            onShowAllCompleted={() => setStatusFilter("done")}
+          />
+        )}
+
+        {tasksState.state.status === "ready" && filteredTasks.length > 0 && statusFilter !== "done" && view === "board" && (
           <TaskBoard
             tasks={filteredTasks}
             today={today}
@@ -173,6 +193,8 @@ export default function Tasks() {
             onSelect={setSelectedTaskId}
             onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
             onChanged={tasksState.reload}
+            hideDoneColumn={statusFilter === "open"}
+            onShowAllCompleted={() => setStatusFilter("done")}
           />
         )}
       </div>
@@ -214,6 +236,8 @@ export default function Tasks() {
         }}
         onCreate={async ({ title, projectId, spaceId, priority, dueDate }) => {
           await tasksRepo.create({ title, project_id: projectId, space_id: spaceId, priority, due_date: dueDate });
+          // A tarefa nova está aberta: no histórico ela não apareceria.
+          if (statusFilter === "done") setStatusFilter("all");
           tasksState.reload();
         }}
       />
