@@ -26,7 +26,7 @@ export function sortByCompletion<T extends Task>(tasks: T[]): T[] {
   return [...tasks].sort((a, b) => completedAt(b).localeCompare(completedAt(a)));
 }
 
-function endOfWeek(date: Date): Date {
+export function endOfWeek(date: Date): Date {
   const end = startOfDay(date);
   end.setDate(end.getDate() + (6 - end.getDay()));
   return end;
@@ -40,8 +40,11 @@ export type TaskGroup = {
   tasks: TaskWithRelations[];
 };
 
-/** Agrupa tarefas por data de entrega (Atrasadas/Hoje/Esta semana/Mais tarde/Sem data) para a lista da tela de Tarefas. */
-export function groupTasksByDueDate(tasks: TaskWithRelations[], today: Date): TaskGroup[] {
+/**
+ * Agrupa tarefas por data de entrega (Atrasadas/Hoje/Esta semana/Mais tarde/Sem data) para a lista da tela de Tarefas.
+ * Com `keepEmpty`, devolve também os grupos vazios (alvos de soltura enquanto uma tarefa é arrastada).
+ */
+export function groupTasksByDueDate(tasks: TaskWithRelations[], today: Date, keepEmpty = false): TaskGroup[] {
   const todayStart = startOfDay(today);
   const weekEnd = endOfWeek(today);
 
@@ -77,7 +80,7 @@ export function groupTasksByDueDate(tasks: TaskWithRelations[], today: Date): Ta
     { key: "later", label: "Mais tarde", tasks: buckets.later },
     { key: "noDate", label: "Sem data", tasks: buckets.noDate },
   ];
-  return groups.filter((g) => g.tasks.length > 0);
+  return keepEmpty ? groups : groups.filter((g) => g.tasks.length > 0);
 }
 
 export type CompletedGroup = {

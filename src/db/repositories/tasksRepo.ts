@@ -31,12 +31,12 @@ export type TaskWithRelations = Task & {
   subtask_done: number;
 };
 
-/** Campos editáveis pelo painel de detalhe da tarefa. */
+/** Campos editáveis pelo painel de detalhe da tarefa e pelo arrastar da lista (`sort_order` + prazo). */
 export type TaskPatch = Partial<
-  Pick<Task, "title" | "notes" | "priority" | "due_date" | "project_id" | "space_id">
+  Pick<Task, "title" | "notes" | "priority" | "due_date" | "project_id" | "space_id" | "sort_order">
 >;
 
-const PATCHABLE_COLUMNS = ["title", "notes", "priority", "due_date", "project_id", "space_id"] as const;
+const PATCHABLE_COLUMNS = ["title", "notes", "priority", "due_date", "project_id", "space_id", "sort_order"] as const;
 
 type TaskRelationsRow = Omit<TaskWithRelations, "space_id"> & {
   own_space_id: string | null;

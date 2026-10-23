@@ -166,7 +166,7 @@ export function SpaceTasksTab({
           selectedTaskId={selectedTaskId}
           onSelect={onSelect}
           onToggleDone={toggleDone}
-          onSubtasksChanged={onChanged}
+          onChanged={onChanged}
           completedGroup={statusFilter === "all"}
           onShowAllCompleted={() => setStatusFilter("done")}
           hideSpace
