@@ -179,7 +179,7 @@ export default function Tasks() {
             selectedTaskId={selectedTaskId}
             onSelect={setSelectedTaskId}
             onToggleDone={(id, done) => tasksRepo.toggleDone(id, done).then(tasksState.reload)}
-            onSubtasksChanged={tasksState.reload}
+            onChanged={tasksState.reload}
             completedGroup={statusFilter === "all"}
             onShowAllCompleted={() => setStatusFilter("done")}
           />
