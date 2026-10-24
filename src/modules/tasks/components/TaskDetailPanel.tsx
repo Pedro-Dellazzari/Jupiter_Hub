@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Ban, Check, Circle, Plus, Square, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { Ban, Check, Circle, GripVertical, Plus, Square, Trash2, X } from "lucide-react";
 import { motion } from "motion/react";
 import { tasksRepo, type Task, type TaskPatch, type TaskWithRelations } from "../../../db/repositories/tasksRepo";
 import type { Project } from "../../../db/repositories/projectsRepo";
@@ -9,6 +9,8 @@ import { ConfirmDialog } from "../../../shared/ui/ConfirmDialog";
 import { ProgressBar } from "../../../shared/ui/ProgressBar";
 import { SelectMenu } from "../../../shared/ui/SelectMenu";
 import { cn } from "../../../shared/utils/cn";
+import { isNoopReorder, nextSortOrder, planSubtaskDrop } from "../utils/listOrder";
+import { DropLine } from "./DropLine";
 import { PriorityChips } from "./PriorityChips";
 
 const LABEL_CLASS = "text-[13px] font-medium text-(--color-ink-muted)";
@@ -20,14 +22,20 @@ function SubtaskRow({
   onToggle,
   onRename,
   onRemove,
+  onDragStart,
+  onDragEnd,
 }: {
   subtask: Task;
   onToggle: (done: boolean) => void;
   onRename: (title: string) => void;
   onRemove: () => void;
+  /** Sem ele (lista com uma subtarefa só) a alça de arrastar não aparece. */
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }) {
   const isDone = subtask.status === "done";
   const [title, setTitle] = useState(subtask.title);
+  const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setTitle(subtask.title), [subtask.title]);
 
@@ -37,8 +45,27 @@ function SubtaskRow({
     else if (trimmed !== subtask.title) onRename(trimmed);
   }
 
+  function startDrag(e: DragEvent<HTMLDivElement>) {
+    e.dataTransfer.setData("text/plain", subtask.id);
+    e.dataTransfer.effectAllowed = "move";
+    // Só a alça é arrastável (arrastar pela linha atrapalharia selecionar texto no campo); a imagem do arrasto é a linha.
+    if (rowRef.current) e.dataTransfer.setDragImage(rowRef.current, 16, rowRef.current.offsetHeight / 2);
+    onDragStart?.();
+  }
+
   return (
-    <div className="group flex items-center gap-2.5 rounded-md px-1 py-1.5 hover:bg-(--color-fill)">
+    <div ref={rowRef} className="group relative flex items-center gap-2.5 rounded-md px-1 py-1.5 hover:bg-(--color-fill)">
+      {onDragStart && (
+        <div
+          draggable
+          onDragStart={startDrag}
+          onDragEnd={onDragEnd}
+          className="absolute inset-y-0 -left-5 flex w-5 cursor-grab items-center justify-center text-(--color-ink-muted) opacity-0 group-hover:opacity-100 active:cursor-grabbing"
+          title="Arrastar para reordenar"
+        >
+          <GripVertical className="size-3" strokeWidth={2} />
+        </div>
+      )}
       <motion.button
         type="button"
         onClick={() => onToggle(!isDone)}
@@ -95,6 +122,10 @@ export function TaskDetailPanel({
   const [subtasks, setSubtasks] = useState<Task[]>([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  /** Posição de queda da subtarefa arrastada: antes da linha com esse índice (`subtasks.length` = no fim). */
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dragStartTimer = useRef<number | undefined>(undefined);
 
   const loadSubtasks = useCallback(() => {
     tasksRepo.listSubtasks(task.id).then(setSubtasks);
@@ -130,11 +161,51 @@ export function TaskDetailPanel({
     if (!trimmed) return;
     setNewSubtask("");
     tasksRepo
-      .create({ title: trimmed, parent_task_id: task.id, sort_order: subtasks.length })
+      .create({ title: trimmed, parent_task_id: task.id, sort_order: nextSortOrder(subtasks) })
       .then(() => {
         loadSubtasks();
         onChanged();
       });
+  }
+
+  function startDrag(id: string) {
+    // Mexer no DOM dentro do dragstart pode cancelar o arrasto nativo: o estado entra no próximo tick.
+    dragStartTimer.current = window.setTimeout(() => setDraggingId(id), 0);
+  }
+
+  function endDrag() {
+    clearTimeout(dragStartTimer.current);
+    setDraggingId(null);
+    setDropIndex(null);
+  }
+
+  /** Metade de cima da linha solta antes dela; metade de baixo, depois. */
+  function aimAtRow(e: DragEvent<HTMLElement>, index: number) {
+    if (!draggingId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const rect = e.currentTarget.getBoundingClientRect();
+    const target = e.clientY < rect.top + rect.height / 2 ? index : index + 1;
+    setDropIndex((prev) => (prev === target ? prev : target));
+  }
+
+  async function drop() {
+    const index = dropIndex;
+    const moved = subtasks.find((s) => s.id === draggingId);
+    endDrag();
+    if (index === null || !moved) return;
+    const updates = planSubtaskDrop(moved, index, subtasks);
+    if (updates.length === 0) return;
+    // A lista já mostra a nova ordem enquanto as gravações terminam.
+    const orders = new Map(updates.map(({ id, patch }) => [id, patch.sort_order]));
+    setSubtasks((prev) =>
+      prev
+        .map((s) => ({ ...s, sort_order: orders.get(s.id) ?? s.sort_order }))
+        .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at)),
+    );
+    for (const { id, patch } of updates) await tasksRepo.update(id, patch);
+    loadSubtasks();
+    onChanged();
   }
 
   function mutateSubtask(action: Promise<void>) {
@@ -143,6 +214,10 @@ export function TaskDetailPanel({
       onChanged();
     });
   }
+
+  // Soltar na própria posição não muda nada: sem linha de queda.
+  const shownDropIndex =
+    draggingId && dropIndex !== null && !isNoopReorder(draggingId, dropIndex, subtasks) ? dropIndex : null;
 
   const doneCount = subtasks.filter((s) => s.status === "done").length;
   const progress = subtasks.length === 0 ? 0 : Math.round((doneCount / subtasks.length) * 100);
@@ -236,15 +311,39 @@ export function TaskDetailPanel({
         </div>
         {subtasks.length > 0 && <ProgressBar value={progress} className="mt-1.5 mb-2 h-1" />}
 
-        <div className="flex flex-col">
-          {subtasks.map((subtask) => (
-            <SubtaskRow
+        <div
+          className="flex flex-col"
+          onDragOver={(e) => {
+            // Nos espaços entre as linhas, vale o último alvo mirado.
+            if (dropIndex !== null) e.preventDefault();
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropIndex(null);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            drop();
+          }}
+        >
+          {subtasks.map((subtask, index) => (
+            <motion.div
               key={subtask.id}
-              subtask={subtask}
-              onToggle={(done) => mutateSubtask(tasksRepo.toggleDone(subtask.id, done))}
-              onRename={(next) => mutateSubtask(tasksRepo.update(subtask.id, { title: next }))}
-              onRemove={() => mutateSubtask(tasksRepo.remove(subtask.id))}
-            />
+              layout="position"
+              transition={springs.standard}
+              onDragOver={(e) => aimAtRow(e, index)}
+              className={cn("relative", subtask.id === draggingId && "opacity-40")}
+            >
+              {shownDropIndex === index && <DropLine edge="top" />}
+              {shownDropIndex === subtasks.length && index === subtasks.length - 1 && <DropLine edge="bottom" />}
+              <SubtaskRow
+                subtask={subtask}
+                onToggle={(done) => mutateSubtask(tasksRepo.toggleDone(subtask.id, done))}
+                onRename={(next) => mutateSubtask(tasksRepo.update(subtask.id, { title: next }))}
+                onRemove={() => mutateSubtask(tasksRepo.remove(subtask.id))}
+                onDragStart={subtasks.length > 1 ? () => startDrag(subtask.id) : undefined}
+                onDragEnd={endDrag}
+              />
+            </motion.div>
           ))}
         </div>
 

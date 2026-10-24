@@ -47,6 +47,12 @@ export function acceptsTaskFromOtherGroup(group: TaskGroupKey, groupTasks: TaskW
 /** Onde a tarefa arrastada vai cair: grupo e índice na lista exibida do grupo (antes da linha `index`). */
 export type DropTarget = { group: TaskGroupKey; index: number };
 
+/** Soltar na própria posição (logo antes ou depois de si mesmo) não muda nada. */
+export function isNoopReorder(movedId: string, index: number, list: { id: string }[]): boolean {
+  const from = list.findIndex((item) => item.id === movedId);
+  return index === from || index === from + 1;
+}
+
 /** Soltar na própria posição (logo antes ou depois de si mesma no mesmo grupo) não muda nada. */
 export function isNoopDrop(
   movedId: string,
@@ -54,9 +60,62 @@ export function isNoopDrop(
   target: DropTarget,
   groupTasks: TaskWithRelations[],
 ): boolean {
-  if (fromGroup !== target.group) return false;
-  const from = groupTasks.findIndex((t) => t.id === movedId);
-  return target.index === from || target.index === from + 1;
+  return fromGroup === target.group && isNoopReorder(movedId, target.index, groupTasks);
+}
+
+type Ordered = { id: string; sort_order: number };
+
+/** `sort_order` para um item novo entrar no fim da lista (a ordem manual usa passos de `SORT_STEP`). */
+export function nextSortOrder(list: Ordered[]): number {
+  return list.length === 0 ? 0 : Math.max(...list.map((item) => item.sort_order)) + SORT_STEP;
+}
+
+/**
+ * Gravações de `sort_order` para encaixar `moved` na posição `index` de `siblings` (a lista sem ele, na ordem exibida).
+ * Na maioria das vezes só o item movido muda; a lista inteira é renumerada apenas quando não há folga entre as vizinhas.
+ */
+function planPlacement<T extends Ordered>(
+  moved: T,
+  siblings: T[],
+  index: number,
+): { sortOrder?: number; others: { id: string; patch: TaskPatch }[] } {
+  const prev = siblings[index - 1];
+  const next = siblings[index];
+  const others: { id: string; patch: TaskPatch }[] = [];
+
+  if (prev && next && next.sort_order - prev.sort_order >= 2) {
+    return { sortOrder: Math.floor((prev.sort_order + next.sort_order) / 2), others };
+  }
+  if (prev && next) {
+    // Sem folga entre as vizinhas (ex: itens nunca arrastados, todos com 0): renumera a lista na nova ordem.
+    let sortOrder: number | undefined;
+    const ordered = [...siblings.slice(0, index), moved, ...siblings.slice(index)];
+    ordered.forEach((item, i) => {
+      const value = (i + 1) * SORT_STEP;
+      if (item.id === moved.id) sortOrder = value;
+      else if (item.sort_order !== value) others.push({ id: item.id, patch: { sort_order: value } });
+    });
+    return { sortOrder, others };
+  }
+  if (next) return { sortOrder: next.sort_order - SORT_STEP, others };
+  if (prev) return { sortOrder: prev.sort_order + SORT_STEP, others };
+  return { others };
+}
+
+/**
+ * Gravações para soltar a subtarefa `moved` na posição `index` (antes da linha `index`) de `subtasks`, a lista
+ * exibida com ela mesma. Vazio quando soltar não muda nada.
+ */
+export function planSubtaskDrop<T extends Ordered>(
+  moved: T,
+  index: number,
+  subtasks: T[],
+): { id: string; patch: TaskPatch }[] {
+  if (isNoopReorder(moved.id, index, subtasks)) return [];
+  const from = subtasks.findIndex((s) => s.id === moved.id);
+  const siblings = subtasks.filter((s) => s.id !== moved.id);
+  const { sortOrder, others } = planPlacement(moved, siblings, from !== -1 && from < index ? index - 1 : index);
+  return sortOrder === undefined ? others : [{ id: moved.id, patch: { sort_order: sortOrder } }, ...others];
 }
 
 /**
@@ -88,22 +147,8 @@ export function planTaskDrop(
     if (due !== moved.due_date) movedPatch.due_date = due;
   }
 
-  const others: { id: string; patch: TaskPatch }[] = [];
-  if (prev && next && next.sort_order - prev.sort_order >= 2) {
-    movedPatch.sort_order = Math.floor((prev.sort_order + next.sort_order) / 2);
-  } else if (prev && next) {
-    // Sem folga entre as vizinhas (ex: tarefas nunca arrastadas, todas com 0): renumera o grupo na nova ordem.
-    const ordered = [...siblings.slice(0, index), moved, ...siblings.slice(index)];
-    ordered.forEach((task, i) => {
-      const sortOrder = (i + 1) * SORT_STEP;
-      if (task.id === moved.id) movedPatch.sort_order = sortOrder;
-      else if (task.sort_order !== sortOrder) others.push({ id: task.id, patch: { sort_order: sortOrder } });
-    });
-  } else if (next) {
-    movedPatch.sort_order = next.sort_order - SORT_STEP;
-  } else if (prev) {
-    movedPatch.sort_order = prev.sort_order + SORT_STEP;
-  }
+  const { sortOrder, others } = planPlacement(moved, siblings, index);
+  if (sortOrder !== undefined) movedPatch.sort_order = sortOrder;
 
   const updates = Object.keys(movedPatch).length > 0 ? [{ id: moved.id, patch: movedPatch }] : [];
   return [...updates, ...others];

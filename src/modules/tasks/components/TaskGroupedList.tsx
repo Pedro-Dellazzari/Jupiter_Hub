@@ -21,6 +21,7 @@ import {
   type TaskGroupKey,
 } from "../utils/dateGroups";
 import { acceptsTaskFromOtherGroup, isNoopDrop, planTaskDrop, sortByListOrder, type DropTarget } from "../utils/listOrder";
+import { DropLine } from "./DropLine";
 import { TaskRow } from "./TaskRow";
 
 const GROUP_ICONS: Record<TaskGroupKey, typeof AlertCircle> = {
@@ -33,18 +34,6 @@ const GROUP_ICONS: Record<TaskGroupKey, typeof AlertCircle> = {
 
 /** Quanto tempo a tarefa recém-concluída fica riscada no lugar antes de sair do grupo de prazo (dá tempo de desfazer). */
 const LINGER_MS = 1500;
-
-/** Linha que marca onde a tarefa arrastada vai cair. */
-function DropLine({ edge }: { edge: "top" | "bottom" }) {
-  return (
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-x-2 z-10 h-0.5 rounded-full bg-(--color-accent)",
-        edge === "top" ? "-top-px" : "-bottom-px",
-      )}
-    />
-  );
-}
 
 /**
  * Lista de tarefas agrupada por prazo (Atrasadas / Hoje / Esta semana / ...) — tela de Tarefas e aba Tarefas do Espaço.
