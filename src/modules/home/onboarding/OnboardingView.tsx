@@ -94,7 +94,7 @@ export function OnboardingView({ name, onSpaceCreated }: { name: string; onSpace
   const doneCount = steps.filter((s) => s.done).length;
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <div className="flex flex-col gap-6">
         <OnboardingHero name={name} />
         <OnboardingProgress done={doneCount} total={steps.length} />

@@ -3,9 +3,11 @@ import { CheckSquare, FolderKanban, Hexagon, NotebookText, Plus } from "lucide-r
 import { motion } from "motion/react";
 import { spacesRepo, type SpaceWithStats } from "../../db/repositories/spacesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
+import { useBackHandler } from "../../shared/hooks/useBackHandler";
 import { Card } from "../../shared/ui/Card";
 import { Dialog } from "../../shared/ui/Dialog";
 import { EmptyState } from "../../shared/ui/EmptyState";
+import { Fab } from "../../shared/ui/Fab";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { springs } from "../../shared/motion/springs";
 import { SpaceDetailView } from "./components/SpaceDetailView";
@@ -91,6 +93,7 @@ export default function Spaces() {
   // Deriva do estado carregado para que as contagens (ex: no diálogo de exclusão) reflitam o que foi criado na página.
   const selectedSpace: SpaceWithStats | null =
     state.status === "ready" ? (state.items.find((s) => s.id === selectedSpaceId) ?? null) : null;
+  useBackHandler(selectedSpace !== null, () => setSelectedSpaceId(null));
 
   if (selectedSpace) {
     return (
@@ -107,14 +110,14 @@ export default function Spaces() {
   }
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">Espaços</h1>
+        <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink) compact:text-[28px]">Espaços</h1>
         <motion.button
           onClick={() => setDialogOpen(true)}
           whileHover={{ scale: 1.03, transition: springs.snappy }}
           whileTap={{ scale: 0.97, transition: springs.snappy }}
-          className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
+          className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110 compact:hidden"
         >
           <Plus className="size-3.5" strokeWidth={2.5} />
           Novo Espaço
@@ -173,6 +176,7 @@ export default function Spaces() {
         </div>
       )}
 
+      <Fab label="Novo Espaço" onClick={() => setDialogOpen(true)} />
       <CreateSpaceDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

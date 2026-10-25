@@ -3,6 +3,8 @@ import { Dialog as RadixDialog } from "radix-ui";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { springs } from "../motion/springs";
+import { useBackHandler } from "../hooks/useBackHandler";
+import { useIsCompact } from "../hooks/useIsCompact";
 
 type DialogProps = {
   open: boolean;
@@ -14,6 +16,7 @@ type DialogProps = {
   children: ReactNode;
 };
 
+/** Centralizado no desktop/tablet; no celular vira bottom sheet (como nos mockups do Fold fechado). */
 export function Dialog({
   open,
   onOpenChange,
@@ -22,6 +25,9 @@ export function Dialog({
   initialFocusRef,
   children,
 }: DialogProps) {
+  const compact = useIsCompact();
+  useBackHandler(open, () => onOpenChange(false));
+
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
@@ -46,34 +52,56 @@ export function Dialog({
                 }
               }}
             >
-              <motion.div
-                className="fixed top-1/2 left-1/2 z-50 w-full max-w-sm rounded-2xl bg-(--color-surface-elevated) p-6 shadow-xl"
-                initial={{ opacity: 0, scale: 0.96, x: "-50%", y: "-50%" }}
-                animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
-                exit={{ opacity: 0, scale: 0.96, x: "-50%", y: "-50%" }}
-                transition={springs.standard}
-              >
-                <div className="mb-4 flex items-start justify-between gap-4">
-                  <div>
-                    <RadixDialog.Title className="text-[16px] font-semibold text-(--color-ink)">
-                      {title}
-                    </RadixDialog.Title>
-                    {description && (
-                      <RadixDialog.Description className="mt-1 text-[13px] text-(--color-ink-muted)">
-                        {description}
-                      </RadixDialog.Description>
-                    )}
-                  </div>
-                  <RadixDialog.Close className="shrink-0 text-(--color-ink-muted) hover:text-(--color-ink)">
-                    <X className="size-4" strokeWidth={2} />
-                  </RadixDialog.Close>
-                </div>
-                {children}
-              </motion.div>
+              {compact ? (
+                <motion.div
+                  className="fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-[24px] bg-(--color-surface-elevated) px-5 pt-2.5 pb-[calc(var(--safe-bottom)+24px)] shadow-xl"
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={springs.standard}
+                >
+                  <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-(--color-ink-muted)/30" />
+                  <DialogHeader title={title} description={description} large />
+                  {children}
+                </motion.div>
+              ) : (
+                <motion.div
+                  className="fixed top-1/2 left-1/2 z-50 w-full max-w-sm rounded-2xl bg-(--color-surface-elevated) p-6 shadow-xl"
+                  initial={{ opacity: 0, scale: 0.96, x: "-50%", y: "-50%" }}
+                  animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+                  exit={{ opacity: 0, scale: 0.96, x: "-50%", y: "-50%" }}
+                  transition={springs.standard}
+                >
+                  <DialogHeader title={title} description={description} />
+                  {children}
+                </motion.div>
+              )}
             </RadixDialog.Content>
           </RadixDialog.Portal>
         )}
       </AnimatePresence>
     </RadixDialog.Root>
+  );
+}
+
+function DialogHeader({ title, description, large }: { title: string; description?: string; large?: boolean }) {
+  return (
+    <div className="mb-4 flex items-start justify-between gap-4">
+      <div>
+        <RadixDialog.Title
+          className={large ? "text-[20px] font-bold text-(--color-ink)" : "text-[16px] font-semibold text-(--color-ink)"}
+        >
+          {title}
+        </RadixDialog.Title>
+        {description && (
+          <RadixDialog.Description className="mt-1 text-[13px] text-(--color-ink-muted)">
+            {description}
+          </RadixDialog.Description>
+        )}
+      </div>
+      <RadixDialog.Close className="shrink-0 p-1 text-(--color-ink-muted) hover:text-(--color-ink)">
+        <X className={large ? "size-5" : "size-4"} strokeWidth={2} />
+      </RadixDialog.Close>
+    </div>
   );
 }

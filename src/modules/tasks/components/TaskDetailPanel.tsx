@@ -223,7 +223,7 @@ export function TaskDetailPanel({
   const progress = subtasks.length === 0 ? 0 : Math.round((doneCount / subtasks.length) * 100);
 
   return (
-    <div className="flex min-h-full flex-col gap-5 px-6 py-6">
+    <div className="flex min-h-full flex-col gap-5 px-6 py-6 compact:px-4 compact:pt-3 compact:pb-10">
       <div className="flex items-center justify-between">
         <h2 className="text-[16px] font-semibold text-(--color-ink)">Detalhes da tarefa</h2>
         <button

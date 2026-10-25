@@ -63,7 +63,7 @@ export function TaskBoard({
   const columns = hideDoneColumn ? COLUMNS.filter((c) => c.key !== "done") : COLUMNS;
 
   return (
-    <div className="flex items-start gap-4">
+    <div className="flex items-start gap-4 compact:-mx-4 compact:snap-x compact:snap-mandatory compact:gap-3 compact:overflow-x-auto compact:px-4 compact:pb-2">
       {columns.map((column) => {
         const columnTasks =
           column.key === "done" ? recentDone : sortByPriority(tasks.filter((t) => columnOf(t) === column.key));
@@ -86,7 +86,7 @@ export function TaskBoard({
               if (id) moveTo(id, column.key);
             }}
             className={cn(
-              "min-w-0 flex-1 rounded-2xl p-2 transition-colors",
+              "min-w-0 flex-1 rounded-2xl p-2 transition-colors compact:w-[85%] compact:flex-none compact:snap-center",
               dragOverColumn === column.key ? "bg-(--color-accent)/8" : "bg-(--color-fill)/60",
             )}
           >

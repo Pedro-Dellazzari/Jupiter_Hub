@@ -84,7 +84,7 @@ export default function Today() {
   const hasError = tasksState.state.status === "error" || habitsState.state.status === "error";
 
   return (
-    <div className="h-full overflow-x-hidden overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-x-hidden overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
           <div className="relative min-w-0 flex-1">
@@ -98,7 +98,7 @@ export default function Today() {
                 exit="exit"
                 transition={springs.standard}
               >
-                <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">{capitalize(word)}</h1>
+                <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink) compact:text-[28px]">{capitalize(word)}</h1>
                 <p className="text-[14px] text-(--color-ink-muted)">{fullDateLabel(selected)}</p>
               </motion.div>
             </AnimatePresence>
@@ -136,7 +136,7 @@ export default function Today() {
                 animate="center"
                 exit="exit"
                 transition={springs.standard}
-                className="flex items-start gap-5"
+                className="flex items-start gap-5 compact:flex-col compact:items-stretch compact:gap-4"
               >
                 <Panel title="Agenda" className="flex-1">
                   {eventsToday.length === 0 ? (

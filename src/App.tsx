@@ -14,7 +14,7 @@ export default function App() {
   if (status === "ready") return <AppShell />;
 
   return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-(--color-surface)" data-tauri-drag-region>
+    <div className="flex h-dvh w-screen flex-col items-center justify-center gap-3 bg-(--color-surface)" data-tauri-drag-region>
       {status === "error" && (
         <>
           <p className="text-[14px] text-(--color-ink-muted)">Não foi possível abrir seus dados locais.</p>

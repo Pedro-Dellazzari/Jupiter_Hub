@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { CalendarPlus, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Card } from "../../shared/ui/Card";
+import { useIsCompact } from "../../shared/hooks/useIsCompact";
 import { cn } from "../../shared/utils/cn";
 import { formatIsoDate } from "../../shared/utils/date";
 import { DayEventsDialog } from "./components/DayEventsDialog";
 import { CalendarSourcesDialog } from "./components/CalendarSourcesDialog";
+import { CompactMonth } from "./components/CompactMonth";
 import { useCalendarStore } from "./useCalendarStore";
 import { useExternalEvents } from "./useExternalEvents";
 import { eventTimeLabel, groupEventsByDay } from "./utils/events";
@@ -43,6 +45,9 @@ export default function CalendarModule() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const today = new Date();
+  const compact = useIsCompact();
+  /** Celular: dia cuja agenda aparece embaixo do mês (o diálogo só abre ao tocar num evento). */
+  const [agendaDay, setAgendaDay] = useState(() => new Date());
 
   const ready = useCalendarStore((s) => s.ready);
   const sourceCount = useCalendarStore((s) => (s.account ? 1 : 0) + s.feeds.length);
@@ -63,11 +68,11 @@ export default function CalendarModule() {
   const syncNow = () => void syncRange(gridStart, gridEnd, { force: true });
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <div className="flex flex-col gap-5">
         <div className="flex items-center gap-4">
-          <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">Calendário</h1>
-          <div className="flex items-center gap-2 text-[14px]">
+          <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink) compact:text-[28px]">Calendário</h1>
+          <div className="flex items-center gap-2 text-[14px] compact:hidden">
             <button
               onClick={() => setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
               className="text-(--color-ink-muted) hover:text-(--color-ink)"
@@ -83,6 +88,19 @@ export default function CalendarModule() {
             </button>
           </div>
           <div className="flex-1" />
+          {compact && (
+            <button
+              type="button"
+              onClick={() => {
+                const now = new Date();
+                setViewedMonth(now);
+                setAgendaDay(now);
+              }}
+              className="rounded-lg bg-(--color-surface-elevated) px-3 py-1.5 text-[13px] font-semibold text-(--color-accent-text) shadow-[0px_1px_6px_0px_rgba(0,0,0,0.06)]"
+            >
+              Hoje
+            </button>
+          )}
           {sourceCount > 0 && (
             <button
               onClick={syncNow}
@@ -104,11 +122,29 @@ export default function CalendarModule() {
               )}
             >
               <CalendarPlus className="size-3.5" strokeWidth={2} />
-              {sourceCount > 0 ? `Calendários · ${sourceCount}` : "Conectar calendário"}
+              <span className={cn(compact && sourceCount > 0 && "hidden")}>
+                {sourceCount > 0 ? `Calendários · ${sourceCount}` : compact ? "Conectar" : "Conectar calendário"}
+              </span>
             </button>
           )}
         </div>
 
+        {compact ? (
+          <CompactMonth
+            weeks={weeks}
+            viewedMonth={viewedMonth}
+            monthLabel={monthLabel(viewedMonth)}
+            selectedDay={agendaDay}
+            eventsByDay={eventsByDay}
+            onSelectDay={(day) => {
+              setAgendaDay(day);
+              if (day.getMonth() !== viewedMonth.getMonth()) setViewedMonth(new Date(day.getFullYear(), day.getMonth(), 1));
+            }}
+            onPrevMonth={() => setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+            onNextMonth={() => setViewedMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+            onOpenEvent={setSelectedDay}
+          />
+        ) : (
         <Card className="flex flex-col gap-1.5 p-4.5">
           <div className="flex items-start gap-1.5">
             {WEEKDAY_HEADERS.map((h) => (
@@ -183,6 +219,7 @@ export default function CalendarModule() {
             </div>
           ))}
         </Card>
+        )}
       </div>
 
       <CalendarSourcesDialog open={sourcesOpen} onOpenChange={setSourcesOpen} onSync={syncNow} />

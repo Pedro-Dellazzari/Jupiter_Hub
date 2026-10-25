@@ -10,6 +10,8 @@ import { ConfirmDialog } from "../../../shared/ui/ConfirmDialog";
 import { Dialog } from "../../../shared/ui/Dialog";
 import { ProgressBar } from "../../../shared/ui/ProgressBar";
 import { useRepoList } from "../../../shared/hooks/useRepoList";
+import { useBackHandler } from "../../../shared/hooks/useBackHandler";
+import { useIsCompact } from "../../../shared/hooks/useIsCompact";
 import { springs } from "../../../shared/motion/springs";
 import { cn } from "../../../shared/utils/cn";
 import { loadProjectsWithStats } from "../../../shared/queries/projectStats";
@@ -186,6 +188,9 @@ export function SpaceDetailView({
   );
   const selectedTask = tab === "tasks" ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null;
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
+  const compact = useIsCompact();
+  useBackHandler(selectedTask !== null, () => setSelectedTaskId(null));
+  useBackHandler(selectedProject !== null, () => setSelectedProjectId(null));
 
   if (selectedProject) {
     return (
@@ -200,15 +205,15 @@ export function SpaceDetailView({
 
   return (
     <div className="flex h-full">
-      <div className="h-full min-w-0 flex-1 overflow-y-auto px-10 py-8">
+      <div className="h-full min-w-0 flex-1 overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
         <button
           onClick={onBack}
-          className="mb-5 flex items-center gap-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink)"
+          className="mb-5 flex items-center gap-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink) compact:mb-3 compact:text-[15px] compact:text-(--color-accent-text)"
         >
-          <ArrowLeft className="size-3" strokeWidth={2} />
+          <ArrowLeft className="size-3 compact:size-4" strokeWidth={2} />
           Espaços
-          <span className="text-(--color-ink-muted)/60">/</span>
-          <span className="text-(--color-ink)">{space.name}</span>
+          <span className="text-(--color-ink-muted)/60 compact:hidden">/</span>
+          <span className="text-(--color-ink) compact:hidden">{space.name}</span>
         </button>
 
         <div className="mb-6 flex items-center gap-3.5">
@@ -245,7 +250,7 @@ export function SpaceDetailView({
           </DropdownMenu.Root>
         </div>
 
-        <div className="mb-5 flex items-center gap-1 border-b border-(--color-divider)">
+        <div className="mb-5 flex items-center gap-1 overflow-x-auto border-b border-(--color-divider) compact:gap-3">
           {TABS.map((t) => (
             <button
               key={t.value}
@@ -361,7 +366,26 @@ export function SpaceDetailView({
       </div>
 
       <AnimatePresence>
-        {selectedTask && (
+        {selectedTask && compact && (
+          <motion.div
+            key="task-detail-screen"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={springs.standard}
+            className="absolute inset-0 z-30 overflow-y-auto bg-(--color-surface-elevated)"
+          >
+            <TaskDetailPanel
+              key={selectedTask.id}
+              task={selectedTask}
+              projects={allProjects}
+              spaces={spaces}
+              onClose={() => setSelectedTaskId(null)}
+              onChanged={reloadAll}
+            />
+          </motion.div>
+        )}
+        {selectedTask && !compact && (
           <motion.aside
             key="task-detail"
             initial={{ width: 0, opacity: 0 }}

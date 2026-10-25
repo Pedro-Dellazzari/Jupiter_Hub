@@ -156,22 +156,22 @@ export function ProjectDetailView({
   }
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <button
         onClick={onBack}
-        className="mb-5 flex items-center gap-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink)"
+        className="mb-5 flex items-center gap-1 text-[12px] font-medium text-(--color-ink-muted) hover:text-(--color-ink) compact:mb-3 compact:text-[15px] compact:text-(--color-accent-text)"
       >
-        <ArrowLeft className="size-3" strokeWidth={2} />
+        <ArrowLeft className="size-3 compact:size-4" strokeWidth={2} />
         Projetos
-        <span className="text-(--color-ink-muted)/60">/</span>
-        <span className="text-(--color-ink)">{project.name}</span>
+        <span className="text-(--color-ink-muted)/60 compact:hidden">/</span>
+        <span className="text-(--color-ink) compact:hidden">{project.name}</span>
       </button>
 
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="mb-5 flex items-start justify-between gap-4 compact:flex-col compact:gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 compact:flex-wrap">
             <span className="size-3.5 shrink-0 rounded-[4px]" style={{ backgroundColor: project.color ?? "#007aff" }} />
-            <h1 className="truncate text-[28px] leading-[1.1] font-bold tracking-[-0.5px] text-(--color-ink)">
+            <h1 className="truncate text-[28px] leading-[1.1] font-bold tracking-[-0.5px] text-(--color-ink) compact:text-[24px] compact:whitespace-normal">
               {project.name}
             </h1>
             <Badge

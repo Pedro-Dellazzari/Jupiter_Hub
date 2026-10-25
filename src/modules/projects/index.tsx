@@ -5,8 +5,10 @@ import { motion } from "motion/react";
 import { projectsRepo } from "../../db/repositories/projectsRepo";
 import { spacesRepo } from "../../db/repositories/spacesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
+import { useBackHandler } from "../../shared/hooks/useBackHandler";
 import { ChipSelect } from "../../shared/ui/ChipSelect";
 import { EmptyState } from "../../shared/ui/EmptyState";
+import { Fab } from "../../shared/ui/Fab";
 import { ListCard } from "../../shared/ui/ListCard";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
@@ -56,6 +58,7 @@ export default function Projects() {
 
   const items = state.status === "ready" ? state.items : [];
   const selectedProject = items.find((p) => p.id === selectedProjectId) ?? null;
+  useBackHandler(selectedProject !== null, () => setSelectedProjectId(null));
 
   if (selectedProject) {
     return (
@@ -90,7 +93,7 @@ export default function Projects() {
       : `${items.length} ${items.length === 1 ? "projeto" : "projetos"}${counts.active > 0 ? ` · ${counts.active} em andamento` : ""}`;
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <ModuleHeader
         title="Projetos"
         subtitle={subtitle}
@@ -99,7 +102,7 @@ export default function Projects() {
             onClick={() => setDialogOpen(true)}
             whileHover={{ scale: 1.03, transition: springs.snappy }}
             whileTap={{ scale: 0.97, transition: springs.snappy }}
-            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110 compact:hidden"
           >
             <Plus className="size-3.5" strokeWidth={2.5} />
             Novo projeto
@@ -186,6 +189,7 @@ export default function Projects() {
         </>
       )}
 
+      <Fab label="Novo projeto" onClick={() => setDialogOpen(true)} />
       <CreateProjectDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

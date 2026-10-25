@@ -25,7 +25,7 @@ export default function Home() {
 
   if (state.status === "error") {
     return (
-      <div className="flex h-full items-center justify-center px-10 py-8">
+      <div className="flex h-full items-center justify-center px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
         <p className="text-[14px] text-(--color-ink-muted)">
           Não foi possível carregar seus dados locais.
         </p>

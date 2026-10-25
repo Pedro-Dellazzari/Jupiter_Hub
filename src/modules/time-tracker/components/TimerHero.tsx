@@ -9,7 +9,8 @@ import { cn } from "../../../shared/utils/cn";
 import { secondsIn, type Session } from "../utils/timeStats";
 import { DayTimeline } from "./DayTimeline";
 
-const HERO_BUTTON_CLASS = "flex items-center gap-2 rounded-[10px] px-4 py-2.5 text-[13px] font-semibold";
+const HERO_BUTTON_CLASS =
+  "flex items-center gap-2 rounded-[10px] px-4 py-2.5 text-[13px] font-semibold compact:flex-1 compact:justify-center compact:py-3.5 compact:text-[15px]";
 
 type StartableTask = { id: string; title: string; project_id: string | null };
 
@@ -37,7 +38,7 @@ export function TimerHero({
   onCreateTask: (title: string) => Promise<StartableTask>;
 }) {
   return (
-    <section className="flex flex-col gap-5 rounded-[20px] bg-[#17171c] px-7 pt-6 pb-5 text-white">
+    <section className="flex flex-col gap-5 rounded-[20px] bg-[#17171c] px-7 pt-6 pb-5 text-white compact:px-4 compact:pt-5">
       {running ? (
         <RunningView
           running={running}
@@ -79,7 +80,7 @@ function RunningView({
   const since = startedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="flex items-center justify-between gap-8">
+    <div className="flex items-center justify-between gap-8 compact:flex-col compact:items-stretch compact:gap-4">
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-2 text-[13px] font-medium text-[#bfbfc7]">
           <motion.span
@@ -89,7 +90,7 @@ function RunningView({
           />
           Em andamento · desde {since}
         </div>
-        <h2 className="truncate text-[24px] leading-tight font-semibold tracking-[-0.4px]">{running.taskTitle}</h2>
+        <h2 className="truncate text-[24px] leading-tight font-semibold tracking-[-0.4px] compact:text-[20px] compact:whitespace-normal">{running.taskTitle}</h2>
         <div className="flex items-center gap-2 text-[13px] text-[#bfbfc7]">
           {current && <span className="size-2 rounded-full" style={{ backgroundColor: current.projectColor }} />}
           <span className="truncate">
@@ -99,11 +100,11 @@ function RunningView({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-3">
-        <span className="text-[52px] leading-none font-bold tracking-[-1.2px] tabular-nums">
+      <div className="flex shrink-0 flex-col items-end gap-3 compact:items-stretch">
+        <span className="text-[52px] leading-none font-bold tracking-[-1.2px] tabular-nums compact:text-center compact:text-[56px]">
           {formatClock(elapsed)}
         </span>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 compact:w-full">
           <motion.button
             type="button"
             onClick={onPause}
@@ -179,13 +180,13 @@ function IdleView({
   }
 
   return (
-    <div className="flex items-center justify-between gap-8">
+    <div className="flex items-center justify-between gap-8 compact:flex-col compact:items-stretch compact:gap-4">
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex items-center gap-2 text-[13px] font-medium text-[#bfbfc7]">
           <span className="size-2 rounded-full bg-[#8e8e93]" />
           Nenhum cronômetro rodando
         </div>
-        <h2 className="text-[24px] leading-tight font-semibold tracking-[-0.4px]">No que você vai trabalhar agora?</h2>
+        <h2 className="text-[24px] leading-tight font-semibold tracking-[-0.4px] compact:text-[20px]">No que você vai trabalhar agora?</h2>
 
         <motion.div
           animate={shake}
@@ -299,10 +300,10 @@ function IdleView({
         </motion.div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-3">
+      <div className="flex shrink-0 flex-col items-end gap-3 compact:items-stretch">
         <span
           className={cn(
-            "text-[52px] leading-none font-bold tracking-[-1.2px] tabular-nums transition-opacity",
+            "text-[52px] leading-none font-bold tracking-[-1.2px] tabular-nums transition-opacity compact:text-center compact:text-[56px]",
             !selected && "opacity-30",
           )}
         >
@@ -324,7 +325,7 @@ function IdleView({
           <Play className="size-3 fill-current" strokeWidth={0} />
           Iniciar
         </motion.button>
-        <span className="text-[12px] text-[#8e8e93]">
+        <span className="text-[12px] text-[#8e8e93] compact:text-center">
           {selected ? "Tudo pronto — é só iniciar" : "Escolha uma tarefa para liberar o início"}
         </span>
       </div>

@@ -10,6 +10,7 @@ import { findWikilinkTrigger, linkAtPosition, resolveNoteByTitle } from "../util
 import { deleteHiddenMarker, insertLink as insertMarkdownLink, moveToLineTextStart, skipClosingMarks, toggleWrap } from "../utils/formatting";
 import { FormatToolbar } from "./FormatToolbar";
 import { livePreview, livePreviewTheme } from "./livePreview";
+import { isMobilePlatform } from "../../../shared/utils/platform";
 
 type LiveEditorProps = {
   initialContent: string;
@@ -122,7 +123,9 @@ export function LiveEditor({ initialContent, notes, currentNoteId, onChange, onB
           drawSelection(),
           markdown({ base: markdownLanguage }),
           EditorView.lineWrapping,
-          placeholder("Escreva em Markdown… use [[ pra linkar outra nota (ctrl/cmd+clique para abrir)"),
+          placeholder(
+            `Escreva em Markdown… use [[ pra linkar outra nota (${isMobilePlatform ? "toque" : "ctrl/cmd+clique"} para abrir)`,
+          ),
           livePreview({ noteExists: (title) => resolveNoteByTitle(latest.current.notes, title) !== undefined }),
           livePreviewTheme,
           Prec.highest(suggestionKeys),
@@ -157,7 +160,8 @@ export function LiveEditor({ initialContent, notes, currentNoteId, onChange, onB
           }),
           EditorView.domEventHandlers({
             mousedown(event, view) {
-              if (!(event.ctrlKey || event.metaKey)) return false;
+              // No toque não existe ctrl/cmd: no celular, tocar no link já abre.
+              if (!(event.ctrlKey || event.metaKey || isMobilePlatform)) return false;
               const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
               if (pos === null) return false;
               const line = view.state.doc.lineAt(pos);

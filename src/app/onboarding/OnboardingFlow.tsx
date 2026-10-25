@@ -15,8 +15,8 @@ export function OnboardingFlow() {
   const [mode, setMode] = useState<AccountMode>(isCloudAvailable ? "cloud" : "local");
 
   return (
-    <div className="flex h-screen w-screen overflow-y-auto bg-(--color-surface)" data-tauri-drag-region>
-      <div className="m-auto w-full max-w-[420px] px-6 py-10">
+    <div className="flex h-dvh w-screen overflow-y-auto bg-(--color-surface) pt-(--safe-top) pb-(--safe-bottom)" data-tauri-drag-region>
+      <div className="m-auto w-full max-w-[420px] px-6 py-10 compact:px-5">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

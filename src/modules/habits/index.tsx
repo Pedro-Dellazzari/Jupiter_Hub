@@ -6,6 +6,7 @@ import { habitsRepo } from "../../db/repositories/habitsRepo";
 import { spacesRepo } from "../../db/repositories/spacesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
 import { EmptyState } from "../../shared/ui/EmptyState";
+import { Fab } from "../../shared/ui/Fab";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { springs } from "../../shared/motion/springs";
@@ -41,7 +42,7 @@ export default function Habits() {
   const hasError = habitsState.state.status === "error" || logsState.state.status === "error";
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <ModuleHeader
         title="Hábitos"
         action={
@@ -49,7 +50,7 @@ export default function Habits() {
             onClick={() => setDialogOpen(true)}
             whileHover={{ scale: 1.03, transition: springs.snappy }}
             whileTap={{ scale: 0.97, transition: springs.snappy }}
-            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110 compact:hidden"
           >
             <Plus className="size-3.5" strokeWidth={2.5} />
             Novo hábito
@@ -89,13 +90,13 @@ export default function Habits() {
       )}
       {habitsState.state.status === "ready" && habits.length > 0 && (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3.5 px-[18px]">
+          <div className="flex items-center gap-3.5 px-[18px] compact:px-3.5">
             <div className="flex-1" />
-            <div className="flex shrink-0 items-center gap-2.5">
+            <div className="flex shrink-0 items-center gap-2.5 compact:gap-1.5">
               {WEEKDAY_LETTERS.map((letter, i) => (
                 <span
                   key={i}
-                  className="flex w-[22px] justify-center text-[11px] font-medium text-[#aeaeb2]"
+                  className="flex w-[22px] justify-center text-[11px] font-medium text-[#aeaeb2] compact:w-[18px]"
                 >
                   {letter}
                 </span>
@@ -117,6 +118,7 @@ export default function Habits() {
         </div>
       )}
 
+      <Fab label="Novo hábito" onClick={() => setDialogOpen(true)} />
       <CreateHabitDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

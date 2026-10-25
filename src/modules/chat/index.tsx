@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useAccountStore, useFirstName } from "../../app/store/useAccountStore";
 import { springs } from "../../shared/motion/springs";
 import { cn } from "../../shared/utils/cn";
+import { isMobilePlatform } from "../../shared/utils/platform";
 import { ANTHROPIC_MODELS } from "./ai/anthropic";
 import { AiSettingsDialog } from "./components/AiSettingsDialog";
 import { useChatStore, type ChatMessage } from "./useChatStore";
@@ -72,7 +73,7 @@ export default function Chat() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Pergunte algo…"
-        autoFocus
+        autoFocus={!isMobilePlatform}
         className="min-w-0 flex-1 bg-transparent text-[14px] text-(--color-ink) outline-none placeholder:text-(--color-ink-muted)/60"
       />
       {streaming ? (
@@ -99,8 +100,11 @@ export default function Chat() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="absolute top-5 right-6 z-10 flex items-center gap-1">
-        {connected && <span className="mr-1 text-[12px] font-medium text-(--color-ink-muted)">{modelLabel}</span>}
+      {/* Desktop: controles flutuando no canto. Celular: cabeçalho com título, como os outros módulos. */}
+      <div className="compact:flex compact:shrink-0 compact:items-center compact:gap-2 compact:px-4 compact:pt-3">
+        <h1 className="hidden flex-1 text-[24px] font-bold tracking-[-0.5px] text-(--color-ink) compact:block">Chat com IA</h1>
+      <div className="absolute top-5 right-6 z-10 flex items-center gap-1 compact:static">
+        {connected && <span className="mr-1 max-w-[120px] truncate text-[12px] font-medium text-(--color-ink-muted)">{modelLabel}</span>}
         {messages.length > 0 && (
           <button type="button" onClick={clear} className={ICON_BUTTON_CLASS} title="Nova conversa">
             <SquarePen className="size-4" strokeWidth={1.75} />
@@ -110,17 +114,18 @@ export default function Chat() {
           <Settings2 className="size-4" strokeWidth={1.75} />
         </button>
       </div>
+      </div>
 
       {messages.length === 0 ? (
         <div className="flex flex-1 items-center justify-center px-10 py-8">
-          <div className="flex w-[534px] flex-col items-center gap-5">
+          <div className="flex w-[534px] flex-col items-center gap-5 compact:w-full">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-(--color-accent)">
               <Sparkles className="size-6 text-(--color-accent-ink)" strokeWidth={2} />
             </div>
-            <h1 className="text-[22px] font-bold tracking-[-0.4px] text-(--color-ink)">
+            <h1 className="text-center text-[22px] font-bold tracking-[-0.4px] text-(--color-ink)">
               Como posso ajudar hoje, {firstName}?
             </h1>
-            <p className="w-[380px] text-center text-[13px] text-(--color-ink-muted)">
+            <p className="w-[380px] text-center text-[13px] text-(--color-ink-muted) compact:w-full">
               Pergunte sobre suas tarefas, projetos, cadernos e hábitos: pendências, prazos, anotações e consistência.
             </p>
 
@@ -141,7 +146,7 @@ export default function Chat() {
               </>
             ) : (
               <>
-                <p className="w-[380px] text-center text-[13px] text-(--color-ink-muted)">
+                <p className="w-[380px] text-center text-[13px] text-(--color-ink-muted) compact:w-full">
                   Para começar, conecte uma chave de API do Claude ou da OpenAI.
                 </p>
                 <motion.button
@@ -159,7 +164,7 @@ export default function Chat() {
         </div>
       ) : (
         <>
-          <div className="min-h-0 flex-1 overflow-y-auto px-10 pt-16 pb-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-10 pt-16 pb-6 compact:px-4 compact:pt-4">
             <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5">
               {messages.map((message, index) => (
                 <MessageBubble
@@ -173,7 +178,7 @@ export default function Chat() {
               <div ref={endRef} />
             </div>
           </div>
-          <div className="shrink-0 px-10 pb-6">
+          <div className="shrink-0 px-10 pb-6 compact:px-4 compact:pb-3">
             <div className="mx-auto w-full max-w-[720px]">{composer}</div>
           </div>
         </>

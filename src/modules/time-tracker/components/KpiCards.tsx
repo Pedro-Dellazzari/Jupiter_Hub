@@ -51,7 +51,7 @@ export function KpiCards({
   const longest = longestSession(sessions, todayStart - 6 * DAY_MS, tomorrow);
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 compact:grid compact:grid-cols-2 compact:gap-3">
       <Kpi label="Hoje" value={today > 0 ? formatTracked(today) : "0m"}>
         <Delta current={today} previous={yesterday} versus="ontem" />
       </Kpi>

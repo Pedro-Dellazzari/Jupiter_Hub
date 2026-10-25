@@ -48,7 +48,7 @@ export function SignInDialog() {
       description={
         resetting
           ? undefined
-          : "A sincronização está parada porque este computador não está conectado à sua conta. Seus dados locais continuam aqui e serão enviados assim que você entrar."
+          : "A sincronização está parada porque este dispositivo não está conectado à sua conta. Seus dados locais continuam aqui e serão enviados assim que você entrar."
       }
       initialFocusRef={emailRef}
     >

@@ -21,7 +21,7 @@ export function HabitCard({
   const accent = habit.color ?? "#007aff";
 
   return (
-    <div className="flex items-center gap-3.5 rounded-[14px] bg-(--color-surface-elevated) px-[18px] py-4 shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)]">
+    <div className="flex items-center gap-3.5 rounded-[14px] bg-(--color-surface-elevated) px-[18px] py-4 shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)] compact:gap-3 compact:px-3.5">
       <div
         className="flex size-9 shrink-0 items-center justify-center rounded-[10px]"
         style={{ backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
@@ -37,7 +37,7 @@ export function HabitCard({
         </p>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2.5">
+      <div className="flex shrink-0 items-center gap-2.5 compact:gap-1.5">
         {week.map((day) => (
           <motion.button
             key={day.date}
@@ -46,7 +46,7 @@ export function HabitCard({
             onClick={() => onToggleDay(day.date)}
             whileHover={day.isFuture ? undefined : { scale: 1.12, transition: springs.snappy }}
             whileTap={day.isFuture ? undefined : { scale: 0.88, transition: springs.snappy }}
-            className={cn("size-[22px] rounded-full", day.isFuture && "cursor-default opacity-40")}
+            className={cn("size-[22px] rounded-full compact:size-[18px]", day.isFuture && "cursor-default opacity-40")}
             style={{ backgroundColor: day.done ? accent : "var(--color-track)" }}
             title={day.date}
           />
