@@ -25,6 +25,36 @@ pnpm tauri dev
 pnpm tauri build
 ```
 
+## Android (APK)
+
+O mesmo código gera o app Android. O projeto Gradle fica em `src-tauri/gen/android` (versionado; a
+`MainActivity.kt` tem ajustes próprios: barras do sistema e ponte de tema). Os layouts por tamanho de tela:
+
+- **Celular** (< 600dp, ex.: Fold fechado): barra de navegação embaixo (Home, Hoje, Tarefas, Projetos, Mais),
+  telas de detalhe em tela cheia, diálogos como bottom sheet e botão "+" flutuante. Classes com o variant
+  `compact:` (ver `src/styles/index.css`) e o hook `useIsCompact`.
+- **Fold aberto / tablet**: navigation rail à esquerda e o layout do desktop no conteúdo.
+- O botão voltar do Android fecha diálogos e telas de detalhe (`useBackHandler`) antes de sair do app.
+- Auto-update e relaunch são só do desktop (`capabilities/desktop.json`); no Android, atualizar = instalar o APK novo.
+
+Pré-requisitos: Android Studio (SDK), NDK (`ndk;30.0.16248370`), JDK 17 e os targets do Rust:
+
+```bash
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+
+Variáveis de ambiente (ajuste os caminhos): `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`,
+`NDK_HOME=%ANDROID_HOME%\ndk\30.0.16248370` e `JAVA_HOME` apontando para o JDK 17.
+No Windows, ative o **Modo de Desenvolvedor**: o Tauri liga a `.so` do Rust ao projeto Gradle com um symlink.
+
+```bash
+pnpm tauri android dev                              # emulador/celular conectado, com hot reload
+pnpm tauri android build --apk --target aarch64     # APK para celular (arm64)
+```
+
+O APK de release só instala assinado: crie `src-tauri/gen/android/keystore.properties` (fora do git) com
+`storeFile`, `keyAlias` e `password`. Sem esse arquivo o release sai sem assinatura.
+
 ## Sync com Supabase (modo "Banco de dados")
 
 1. Crie um projeto no [Supabase](https://supabase.com/).
