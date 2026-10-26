@@ -44,6 +44,13 @@ function applyPreference(preference: Theme | null) {
       .setTheme(preference)
       .catch(() => {});
   }
+  syncAndroidSystemBars(preference ?? readSystemTheme());
+}
+
+/** No Android, a status bar e a barra de gestos acompanham o tema do app (ponte da MainActivity). */
+function syncAndroidSystemBars(theme: Theme) {
+  const bridge = (window as { JupiterAndroid?: { setDarkTheme: (dark: boolean) => void } }).JupiterAndroid;
+  bridge?.setDarkTheme(theme === "dark");
 }
 
 type ThemeState = {
@@ -51,6 +58,8 @@ type ThemeState = {
   preference: Theme | null;
   system: Theme;
   toggle: () => void;
+  /** Escolha direta (tela Aparência do mobile); `null` volta a seguir o sistema. */
+  setPreference: (preference: Theme | null) => void;
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
@@ -58,10 +67,12 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   system: readSystemTheme(),
   toggle: () => {
     const { preference, system } = get();
-    const next: Theme = (preference ?? system) === "dark" ? "light" : "dark";
-    writePreference(next);
-    applyPreference(next);
-    set({ preference: next });
+    get().setPreference((preference ?? system) === "dark" ? "light" : "dark");
+  },
+  setPreference: (preference) => {
+    writePreference(preference);
+    applyPreference(preference);
+    set({ preference });
   },
 }));
 
@@ -75,5 +86,7 @@ export function initTheme() {
   applyPreference(useThemeStore.getState().preference);
   systemQuery.addEventListener("change", () => {
     useThemeStore.setState({ system: readSystemTheme() });
+    const { preference } = useThemeStore.getState();
+    if (!preference) syncAndroidSystemBars(readSystemTheme());
   });
 }

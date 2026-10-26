@@ -61,7 +61,7 @@ export default function TimeTracker() {
 
   if (entriesState.state.status === "error") {
     return (
-      <div className="h-full overflow-y-auto px-10 py-8">
+      <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
         <ModuleHeader title="Time Tracker" />
         <ModuleErrorState />
       </div>
@@ -76,20 +76,20 @@ export default function TimeTracker() {
   const dateLabel = new Date(now).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="h-full overflow-y-auto px-10 py-8">
+    <div className="h-full overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
       <ModuleHeader
         title="Time Tracker"
         subtitle={`${dateLabel.charAt(0).toUpperCase()}${dateLabel.slice(1)} · ${
           todayTotal > 0 ? `${formatTracked(todayTotal)} registradas hoje` : "nada registrado hoje"
         }`}
         action={
-          <div className="flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5">
+          <div className="flex items-center gap-0.5 rounded-lg bg-(--color-fill) p-0.5 compact:w-full">
             {PERIODS.map((p) => (
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
                 className={cn(
-                  "rounded-md px-3.5 py-1.5 text-[12px] font-semibold",
+                  "rounded-md px-3.5 py-1.5 text-[12px] font-semibold compact:flex-1 compact:py-2 compact:text-[13px]",
                   period === p.value
                     ? "bg-(--color-surface-elevated) text-(--color-ink) shadow-[0px_1px_8px_0px_rgba(0,0,0,0.05)]"
                     : "text-(--color-ink-muted) hover:text-(--color-ink)",
@@ -128,7 +128,7 @@ export default function TimeTracker() {
 
           <KpiCards sessions={sessions} week={week} todayStart={todayStart} />
 
-          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start gap-5">
+          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start gap-5 compact:grid-cols-1">
             <div className="flex min-w-0 flex-col gap-5">
               <WeekChart days={week} />
               <TrackedTasks

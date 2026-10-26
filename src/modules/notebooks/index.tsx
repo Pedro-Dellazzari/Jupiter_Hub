@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { notebooksRepo } from "../../db/repositories/notebooksRepo";
 import { notesRepo } from "../../db/repositories/notesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
+import { useBackHandler } from "../../shared/hooks/useBackHandler";
+import { useIsCompact } from "../../shared/hooks/useIsCompact";
+import { Fab } from "../../shared/ui/Fab";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { Explorer } from "./components/Explorer";
 import { NoteEditor } from "./components/NoteEditor";
@@ -22,6 +25,15 @@ export default function Notebooks() {
   const notesState = useRepoList(notesRepo.list);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [renamingNotebookId, setRenamingNotebookId] = useState<string | null>(null);
+  // Celular: lista e nota são telas separadas; a nota só aparece depois de escolhida.
+  const compact = useIsCompact();
+  const [mobileNoteOpen, setMobileNoteOpen] = useState(false);
+  useBackHandler(compact && mobileNoteOpen, () => setMobileNoteOpen(false));
+
+  function openNote(id: string) {
+    setSelectedNoteId(id);
+    setMobileNoteOpen(true);
+  }
 
   useEffect(() => {
     if (notesState.state.status !== "ready") return;
@@ -99,7 +111,7 @@ export default function Notebooks() {
       sort_order: notes.filter((n) => n.notebook_id === targetNotebookId).length,
     });
     reload();
-    setSelectedNoteId(note.id);
+    openNote(note.id);
   }
 
   async function handleDuplicateNote() {
@@ -128,6 +140,7 @@ export default function Notebooks() {
     if (!selectedNote) return;
     notesRepo.remove(selectedNote.id).then(reload);
     setSelectedNoteId(null);
+    setMobileNoteOpen(false);
   }
 
   async function handleSaveTitle(newTitle: string) {
@@ -169,6 +182,28 @@ export default function Notebooks() {
         .filter((n) => n.id !== selectedNote.notebook_id)
     : [];
 
+  const editor = (
+    <NoteEditor
+      note={selectedNote}
+      notebook={selectedNotebook}
+      notes={notes}
+      otherNotebooks={otherNotebooks}
+      folderLabel={(id) => folderPath(notebooks, id)}
+      onCreateNote={() => handleCreateNote(notebooks[0]?.id ?? "")}
+      onSaveTitle={handleSaveTitle}
+      onSaveContent={(content) =>
+        selectedNote && notesRepo.update(selectedNote.id, { content }).then(notesState.reload)
+      }
+      onDuplicateNote={handleDuplicateNote}
+      onMoveNote={handleMoveSelectedNote}
+      onDeleteNote={handleDeleteNote}
+      onFollowLink={handleFollowLink}
+      onBack={compact ? () => setMobileNoteOpen(false) : undefined}
+    />
+  );
+
+  if (compact && mobileNoteOpen && selectedNote) return editor;
+
   return (
     <div className="flex h-full">
       <Explorer
@@ -176,7 +211,7 @@ export default function Notebooks() {
         notes={notes}
         selectedNoteId={selectedNoteId}
         renamingNotebookId={renamingNotebookId}
-        onSelectNote={setSelectedNoteId}
+        onSelectNote={openNote}
         onCreateNotebook={handleCreateNotebook}
         onCreateNote={handleCreateNote}
         onStartRenameNotebook={setRenamingNotebookId}
@@ -185,23 +220,9 @@ export default function Notebooks() {
         onMoveNote={handleReorderNotes}
         onDeleteNotebook={handleDeleteNotebook}
       />
-      <NoteEditor
-        note={selectedNote}
-        notebook={selectedNotebook}
-        notes={notes}
-        otherNotebooks={otherNotebooks}
-        folderLabel={(id) => folderPath(notebooks, id)}
-        onCreateNote={() => handleCreateNote(notebooks[0]?.id ?? "")}
-        onSaveTitle={handleSaveTitle}
-        onSaveContent={(content) =>
-          selectedNote && notesRepo.update(selectedNote.id, { content }).then(notesState.reload)
-        }
-        onDuplicateNote={handleDuplicateNote}
-        onMoveNote={handleMoveSelectedNote}
-        onDeleteNote={handleDeleteNote}
-        onFollowLink={handleFollowLink}
-      />
-      <Backlinks note={selectedNote} notes={notes} onSelectNote={setSelectedNoteId} />
+      {!compact && editor}
+      {!compact && <Backlinks note={selectedNote} notes={notes} onSelectNote={setSelectedNoteId} />}
+      <Fab label="Nova nota" onClick={() => void handleCreateNote(notebooks[0]?.id ?? "")} />
     </div>
   );
 }

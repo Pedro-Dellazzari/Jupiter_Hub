@@ -21,13 +21,17 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
-tauri-plugin-updater = "2"
-tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Mesmo reqwest que o tauri-plugin-updater já traz; o TLS (rustls) vem das features que ele liga.
-reqwest = { version = "0.13", default-features = false }
+# Mesmo reqwest que o tauri-plugin-updater traz. O TLS é ligado aqui também porque no Android
+# o updater não entra no build e o reqwest ficaria sem nenhum.
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
+
+# Auto-update e relaunch só existem no desktop (no Android a atualização é instalar um APK novo).
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

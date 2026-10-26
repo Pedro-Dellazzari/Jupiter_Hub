@@ -102,7 +102,7 @@ function TimeTrackerCard() {
 
 export function StatCards() {
   return (
-    <div className="flex items-start gap-5">
+    <div className="flex items-start gap-5 compact:grid compact:grid-cols-2 compact:items-stretch compact:gap-3">
       <TasksTodayCard />
 
       <StatCardShell

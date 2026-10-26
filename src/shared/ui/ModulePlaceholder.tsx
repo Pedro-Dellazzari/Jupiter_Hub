@@ -16,7 +16,7 @@ export function ModulePlaceholder({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springs.standard}
-      className="flex h-full flex-col px-10 py-8"
+      className="flex h-full flex-col px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24"
     >
       <ModuleHeader title={title} />
       <div className="flex flex-1 flex-col items-center justify-center gap-3.5">

@@ -73,7 +73,7 @@ export function TaskRow({
           }
         }}
         className={cn(
-          "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent)/50",
+          "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 outline-none focus-visible:ring-1 focus-visible:ring-(--color-accent)/50 compact:gap-3.5 compact:py-3",
           selected || isTiming ? "bg-(--color-accent)/8" : "hover:bg-(--color-fill)",
         )}
       >
@@ -86,24 +86,26 @@ export function TaskRow({
         whileTap={{ scale: 0.85, transition: springs.snappy }}
         style={!isDone ? { borderColor: priority.color } : undefined}
         className={cn(
-          "flex size-4 shrink-0 items-center justify-center rounded-full border",
+          "flex size-4 shrink-0 items-center justify-center rounded-full border compact:size-[22px] compact:border-2",
           isDone ? "border-(--color-accent) bg-(--color-accent) text-(--color-accent-ink)" : "text-transparent",
         )}
         title={isDone ? "Marcar como a fazer" : "Marcar como concluída"}
       >
-        <Check className="size-2.5" strokeWidth={3} />
+        <Check className="size-2.5 compact:size-3" strokeWidth={3} />
       </motion.button>
 
+      {/* Celular: título em cima e os chips numa linha embaixo; no desktop o wrapper some (contents). */}
+      <div className="contents compact:flex compact:min-w-0 compact:flex-1 compact:flex-col compact:items-start compact:gap-1">
       <span
         className={cn(
-          "min-w-0 flex-1 truncate text-[13px]",
+          "min-w-0 flex-1 truncate text-[13px] compact:w-full compact:text-[15px]",
           isDone ? "text-(--color-ink-muted) line-through" : "text-(--color-ink)",
         )}
       >
         {task.title}
       </span>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5 compact:flex-wrap">
         {showPriority && (
           <span
             className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium"
@@ -170,6 +172,7 @@ export function TaskRow({
         )}
         <TaskTimerControl task={task} canStart={!isDone} />
         </div>
+      </div>
       </div>
 
       {expanded && hasSubtasks && (

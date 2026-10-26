@@ -10,8 +10,6 @@
     "sql:default",
     "sql:allow-load",
     "sql:allow-execute",
-    "sql:allow-select",
-    "updater:default",
-    "process:allow-restart"
+    "sql:allow-select"
   ]
 }

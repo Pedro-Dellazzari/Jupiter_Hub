@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 /*
+ * Layout compacto = celular (Fold fechado, ~360–460dp). O desktop tem largura mínima de 900px,
+ * então `compact:` nunca liga lá. Mesmo valor de COMPACT_QUERY em shared/hooks/useIsCompact.ts.
+ */
+@custom-variant compact (@media (width < 600px));
+
+/*
  * Tokens provisórios — substituir pelos valores reais do Figma quando
  * sincronizarmos o design system (cores, tracking/leading por tamanho).
  */
@@ -114,4 +120,16 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Toque no Android: sem o retângulo azul de highlight nem o zoom por duplo toque. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/*
+ * Áreas ocupadas pelas barras do sistema. No Android a MainActivity já afasta o
+ * WebView delas (então isto dá 0); env() cobre WebViews que desenham por baixo.
+ */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }

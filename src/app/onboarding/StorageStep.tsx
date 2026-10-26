@@ -26,7 +26,7 @@ const OPTIONS: Option[] = [
     icon: HardDrive,
     title: "Dados locais",
     description:
-      "Ficam só neste computador. Escolha esta opção se você vai usar o Jupiter Hub em uma única máquina.",
+      "Ficam só neste dispositivo. Escolha esta opção se você vai usar o Jupiter Hub em um único aparelho.",
   },
 ];
 

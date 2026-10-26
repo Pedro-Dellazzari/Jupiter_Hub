@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DropdownMenu } from "radix-ui";
-import { Ban, ChevronRight, MoreHorizontal, NotebookText } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, MoreHorizontal, NotebookText } from "lucide-react";
 import type { Note } from "../../../db/repositories/notesRepo";
 import type { Notebook } from "../../../db/repositories/notebooksRepo";
 import { LiveEditor } from "./LiveEditor";
@@ -19,6 +19,8 @@ type NoteEditorProps = {
   onMoveNote: (notebookId: string) => void;
   onDeleteNote: () => void;
   onFollowLink: (title: string) => void;
+  /** Celular: a nota ocupa a tela toda e ganha um "‹ Cadernos" para voltar à lista. */
+  onBack?: () => void;
 };
 
 function describeLastEdit(updatedAt: string): string {
@@ -44,6 +46,7 @@ export function NoteEditor({
   onMoveNote,
   onDeleteNote,
   onFollowLink,
+  onBack,
 }: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
@@ -94,8 +97,18 @@ export function NoteEditor({
 
   return (
     <div
-      className="relative flex h-full flex-1 flex-col overflow-y-auto bg-(--color-surface-elevated) px-12 py-10"
+      className="relative flex h-full flex-1 flex-col overflow-y-auto bg-(--color-surface-elevated) px-12 py-10 compact:px-4 compact:pt-3 compact:pb-10"
     >
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="-ml-1 mb-3 flex items-center gap-0.5 self-start text-[15px] font-medium text-(--color-accent-text)"
+        >
+          <ChevronLeft className="size-5" strokeWidth={2} />
+          Cadernos
+        </button>
+      )}
       <div className="mb-3.5 flex items-center gap-2">
         <p className="min-w-0 flex-1 truncate text-[12px] text-(--color-ink-muted)">
           {notebook ? `${folderLabel(notebook.id)} / ${note.title || "Sem título"}` : note.title}
@@ -166,7 +179,7 @@ export function NoteEditor({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={() => title !== note.title && onSaveTitle(title)}
-        className="w-full text-[26px] leading-[1.08] font-bold tracking-[-0.5px] text-(--color-ink) outline-none"
+        className="w-full bg-transparent text-[26px] leading-[1.08] font-bold tracking-[-0.5px] text-(--color-ink) outline-none compact:text-[24px]"
       />
       <p className="mt-2.5 text-[12px] text-(--color-ink-muted)">
         {describeLastEdit(note.updated_at)}

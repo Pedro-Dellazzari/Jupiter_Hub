@@ -20,6 +20,7 @@ import type { Notebook } from "../../../db/repositories/notebooksRepo";
 import type { Note } from "../../../db/repositories/notesRepo";
 import { reorderList } from "../utils/dragOrder";
 import { childrenOf, descendantIds } from "../utils/folders";
+import { useIsCompact } from "../../../shared/hooks/useIsCompact";
 
 type ExplorerProps = {
   notebooks: Notebook[];
@@ -80,6 +81,7 @@ export function Explorer({
   const [hoveredNewNoteFor, setHoveredNewNoteFor] = useState<string | null>(null);
   const [hoveredNewNotebook, setHoveredNewNotebook] = useState(false);
   const [hoveredHeaderId, setHoveredHeaderId] = useState<string | null>(null);
+  const compact = useIsCompact();
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [deletingNotebookId, setDeletingNotebookId] = useState<string | null>(null);
 
@@ -311,7 +313,7 @@ export function Explorer({
               onClick={() => setCollapsed((c) => ({ ...c, [notebook.id]: isOpen }))}
               onDoubleClick={() => onStartRenameNotebook(notebook.id)}
               title="Duplo clique para renomear"
-              className="min-w-0 flex-1 truncate text-left text-[13px] font-semibold"
+              className="min-w-0 flex-1 truncate text-left text-[13px] font-semibold compact:py-1 compact:text-[14px]"
             >
               {notebook.name}
             </button>
@@ -335,7 +337,7 @@ export function Explorer({
           >
             <Plus className="size-3 shrink-0" strokeWidth={2} />
           </motion.button>
-          {!isRenaming && (hoveredHeaderId === notebook.id || menuOpenFor === notebook.id) && (
+          {!isRenaming && (compact || hoveredHeaderId === notebook.id || menuOpenFor === notebook.id) && (
             <DropdownMenu.Root
               open={menuOpenFor === notebook.id}
               onOpenChange={(open) => setMenuOpenFor(open ? notebook.id : null)}
@@ -438,7 +440,7 @@ export function Explorer({
                     // Sem ícone: o texto da nota alinha com o ícone da pasta, um nível abaixo dela.
                     style={{ paddingLeft: (depth + 1) * INDENT + 4 }}
                     className={cn(
-                      "rounded-md py-1.5 pr-2 text-left text-[13px]",
+                      "rounded-md py-1.5 pr-2 text-left text-[13px] compact:py-2.5 compact:text-[15px]",
                       isDraggingThisNote && "cursor-grabbing opacity-40",
                       isActive
                         ? "bg-(--color-accent)/12 font-semibold text-(--color-accent-text)"
@@ -462,9 +464,9 @@ export function Explorer({
   const rootFolders = childrenOf(notebooks, null);
 
   return (
-    <div className="flex h-full w-[260px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-(--color-divider) bg-(--color-surface-elevated) px-4 pt-6 pb-5">
+    <div className="flex h-full w-[260px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-(--color-divider) bg-(--color-surface-elevated) px-4 pt-6 pb-5 compact:w-full compact:border-r-0 compact:bg-(--color-surface) compact:pt-3 compact:pb-24">
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-[15px] font-semibold text-(--color-ink)">Cadernos</span>
+        <span className="text-[15px] font-semibold text-(--color-ink) compact:text-[28px] compact:font-bold compact:tracking-[-0.5px]">Cadernos</span>
         <div className="flex-1" />
         <motion.button
           onClick={() => onCreateNotebook(null)}

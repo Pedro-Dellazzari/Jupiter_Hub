@@ -7,6 +7,9 @@ import { projectsRepo } from "../../db/repositories/projectsRepo";
 import { spacesRepo } from "../../db/repositories/spacesRepo";
 import { useRepoList } from "../../shared/hooks/useRepoList";
 import { EmptyState } from "../../shared/ui/EmptyState";
+import { Fab } from "../../shared/ui/Fab";
+import { useBackHandler } from "../../shared/hooks/useBackHandler";
+import { useIsCompact } from "../../shared/hooks/useIsCompact";
 import { ModuleErrorState } from "../../shared/ui/ModuleErrorState";
 import { springs } from "../../shared/motion/springs";
 import { cn } from "../../shared/utils/cn";
@@ -52,12 +55,14 @@ export default function Tasks() {
     ? (PRIORITY_OPTIONS.find((o) => o.value === priorityFilter)?.label ?? "Prioridade")
     : "Prioridade";
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
+  const compact = useIsCompact();
+  useBackHandler(selectedTask !== null, () => setSelectedTaskId(null));
 
   return (
     <div className="flex h-full">
-      <div className="h-full min-w-0 flex-1 overflow-y-auto px-10 py-8">
-        <div className="mb-5 flex items-center justify-between">
-          <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">Tarefas</h1>
+      <div className="h-full min-w-0 flex-1 overflow-y-auto px-10 py-8 compact:px-4 compact:pt-3 compact:pb-24">
+        <div className="mb-5 flex items-center justify-between compact:mb-4">
+          <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink) compact:text-[28px]">Tarefas</h1>
           <div className="flex items-center gap-2">
             {/* O histórico de concluídas é sempre uma lista, então o seletor Lista/Board some nele. */}
             <div
@@ -93,7 +98,7 @@ export default function Tasks() {
               onClick={() => setDialogOpen(true)}
               whileHover={{ scale: 1.03, transition: springs.snappy }}
               whileTap={{ scale: 0.97, transition: springs.snappy }}
-              className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110"
+              className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) py-2 pr-3.5 pl-3 text-[12px] font-semibold text-(--color-accent-ink) hover:brightness-110 compact:hidden"
             >
               <Plus className="size-3.5" strokeWidth={2.5} />
               Nova tarefa
@@ -199,8 +204,30 @@ export default function Tasks() {
         )}
       </div>
 
+      <Fab label="Nova tarefa" onClick={() => setDialogOpen(true)} />
+
       <AnimatePresence>
-        {selectedTask && (
+        {selectedTask && compact && (
+          // Celular: o detalhe cobre a lista (tela própria), em vez do painel lateral.
+          <motion.div
+            key="task-detail-screen"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={springs.standard}
+            className="absolute inset-0 z-30 overflow-y-auto bg-(--color-surface-elevated)"
+          >
+            <TaskDetailPanel
+              key={selectedTask.id}
+              task={selectedTask}
+              projects={projects}
+              spaces={spaces}
+              onClose={() => setSelectedTaskId(null)}
+              onChanged={tasksState.reload}
+            />
+          </motion.div>
+        )}
+        {selectedTask && !compact && (
           <motion.aside
             key="task-detail"
             initial={{ width: 0, opacity: 0 }}

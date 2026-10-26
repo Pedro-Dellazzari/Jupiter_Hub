@@ -11,9 +11,9 @@ export function ModuleHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="mb-6 flex items-center justify-between gap-4 compact:mb-4 compact:flex-wrap compact:gap-3">
       <div>
-        <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink)">{title}</h1>
+        <h1 className="text-[24px] font-bold tracking-[-0.5px] text-(--color-ink) compact:text-[28px]">{title}</h1>
         {subtitle && <p className="mt-1 text-[13px] text-(--color-ink-muted)">{subtitle}</p>}
       </div>
       {action}

@@ -16,10 +16,10 @@ pub async fn fetch_calendar_feed(url: String) -> Result<String, String> {
     if rustls::crypto::CryptoProvider::get_default().is_none() {
         let _ = rustls::crypto::ring::default_provider().install_default();
     }
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()
-        .map_err(|_| "network".to_string())?;
+    let builder = reqwest::Client::builder().timeout(Duration::from_secs(30));
+    #[cfg(target_os = "android")]
+    let builder = builder.tls_certs_only(android_system_roots());
+    let client = builder.build().map_err(|_| "network".to_string())?;
     let response = client
         .get(&url)
         .header("Accept", "text/calendar, text/plain, */*")
@@ -34,6 +34,20 @@ pub async fn fetch_calendar_feed(url: String) -> Result<String, String> {
         return Err("too_large".into());
     }
     Ok(String::from_utf8_lossy(&bytes).into_owned())
+}
+
+/// No Android o verificador da plataforma (padrão do reqwest) precisa ser inicializado via JNI;
+/// sem isso a validação falha. Em vez dele, as raízes vêm do repositório de CAs do próprio sistema
+/// (o do módulo Conscrypt, atualizável, e o de /system), em PEM.
+#[cfg(target_os = "android")]
+fn android_system_roots() -> Vec<reqwest::Certificate> {
+    ["/apex/com.android.conscrypt/cacerts", "/system/etc/security/cacerts"]
+        .iter()
+        .filter_map(|dir| std::fs::read_dir(dir).ok())
+        .flatten()
+        .filter_map(|entry| std::fs::read(entry.ok()?.path()).ok())
+        .filter_map(|pem| reqwest::Certificate::from_pem(&pem).ok())
+        .collect()
 }
 
 #[cfg(test)]

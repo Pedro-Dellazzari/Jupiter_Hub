@@ -35,7 +35,7 @@ function LocalForm({ onBack }: { onBack: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <BackButton onClick={onBack} />
-      <StepHeader title="Como podemos te chamar?" description="Seus dados ficam guardados só neste computador." />
+      <StepHeader title="Como podemos te chamar?" description="Seus dados ficam guardados só neste dispositivo." />
       <Field
         label="Nome"
         value={name}
@@ -160,7 +160,7 @@ function CloudForm({ onBack }: { onBack: () => void }) {
       <p className="flex gap-2 rounded-lg bg-(--color-fill) p-3 text-[12px] leading-snug text-(--color-ink-muted)">
         <Info className="mt-px size-3.5 shrink-0" strokeWidth={2} />
         <span>
-          A senha só será pedida novamente se você entrar com este e-mail em outra máquina. Neste computador, você
+          A senha só será pedida novamente se você entrar com este e-mail em outro dispositivo. Neste aqui, você
           continua conectado.
         </span>
       </p>
