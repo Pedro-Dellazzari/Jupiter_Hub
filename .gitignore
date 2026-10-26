@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
+# Rust / Tauri
+target
 
 # Editor directories and files
 .vscode/*
@@ -23,7 +27,8 @@ dist-ssr
 *.sln
 *.sw?
 
-.claude/
+.claude/*
+!.claude/launch.json
 
 .mcp.json
 
@@ -31,3 +36,16 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Android: artefatos de build e assinatura (nunca versionar)
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties
+key.properties
+local.properties
+
+# Sistema operacional
+Thumbs.db
+desktop.ini
