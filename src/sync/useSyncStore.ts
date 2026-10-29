@@ -64,7 +64,7 @@ function describeError(err: unknown) {
   if (isOffline(err)) return "Sem conexão. Tentaremos de novo em instantes.";
   if (isAuthError(err)) return "Sua sessão expirou. Entre novamente.";
   console.error("Falha no sync:", err);
-  return "Não foi possível sincronizar. Tentaremos de novo em instantes.";
+  return `Não foi possível sincronizar (${errorMessage(err)}). Tentaremos de novo em instantes.`;
 }
 
 let running: Promise<void> | null = null;

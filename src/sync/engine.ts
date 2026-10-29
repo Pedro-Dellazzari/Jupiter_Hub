@@ -53,6 +53,26 @@ function isForeignKeyError(err: unknown) {
   return String(err instanceof Error ? err.message : err).includes("FOREIGN KEY");
 }
 
+function detailOf(err: unknown) {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const { message, details, hint, code } = err as Record<string, unknown>;
+    const parts = [message, details, hint, code ? `código ${code}` : null].filter(Boolean);
+    if (parts.length) return parts.join(" — ");
+  }
+  return String(err);
+}
+
+/** Diz em que etapa e tabela o sync falhou; sem isso, "Não foi possível sincronizar" não leva a lugar nenhum. */
+async function atStage<T>(stage: string, table: SyncTable, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (err instanceof SyncAccountMismatchError) throw err;
+    throw new Error(`${stage} ${table.name}: ${detailOf(err)}`);
+  }
+}
+
 type EngineDeps = {
   db: LocalDb;
   remote: Remote;
@@ -243,17 +263,17 @@ export function createSyncEngine({ db, remote, settings, now, newId, pageSize = 
   async function sync(userId: string): Promise<SyncResult> {
     await bindAccount(userId);
 
-    const deltas = await Promise.all(SYNC_TABLES.map(fetchDelta));
+    const deltas = await Promise.all(SYNC_TABLES.map((t) => atStage("Baixar", t, () => fetchDelta(t))));
     let pulled = 0;
     for (const [i, table] of SYNC_TABLES.entries()) {
       const { rows, cursor } = deltas[i];
-      pulled += await applyRows(table, rows);
+      pulled += await atStage("Aplicar", table, () => applyRows(table, rows));
       if (table.name === "habit_logs") pulled += await dedupeHabitLogs();
       if (cursor) await settings.set(cursorKey(table), cursor);
     }
 
     let pushed = 0;
-    for (const table of SYNC_TABLES) pushed += await pushTable(table);
+    for (const table of SYNC_TABLES) pushed += await atStage("Enviar", table, () => pushTable(table));
     return { pulled, pushed };
   }
 
